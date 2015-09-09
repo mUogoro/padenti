@@ -18,4 +18,24 @@ Features include:
   
 "Padenti" is the word in Sardinian language (in its variant of the Mogoro village) for "Forest".
 
-For installation, usage and a small tutorial please consult the Doxygen documentation.
+## Dependencies and installation
+###Dependencies
+- A GNU Linux system
+- An OpenCL environment from either Nvidia or AMD
+- A CPU with SS2 instructions support
+- OpenCV 
+- Boost (components random, filesystem, chrono and log)
+- cmake (for compilation and installation)
+- Doxygen (for documentation generation)
+
+###Compilation and installation
+```
+git clone https://github.com/mUogoro/padenti.git padenti
+cd padenti
+mkdir build && cd build
+# The flag -DNVIDIA=True is mandatory for Nvidia OpenCL implementation support
+cmake -DNVIDIA=True ..
+make && make doc && make install
+```
+
+For more imformation about library usage and a small tutorial please consult the Doxygen documentation.

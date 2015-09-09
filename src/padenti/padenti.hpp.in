@@ -1,0 +1,448 @@
+/******************************************************************************
+ * Padenti Library
+ *
+ * Copyright (C) 2015  Daniele Pianu <daniele.pianu@ieiit.cnr.it>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ ******************************************************************************/
+
+#ifndef __PADENTI_HPP
+#define __PADENTI_HPP
+
+#define PADENTI_VERSION_MAJOR @Padenti_VERSION_MAJOR@
+#define PADENTI_VERSION_MINOR @Padenti_VERSION_MINOR@
+
+/*!
+  \mainpage 
+
+  \image html padenti_results.png "Results for hand-parts labeling and class labelling on the MSRC2 and NYU2 datasets"
+  (<a href=http://research.microsoft.com/en-us/projects/objectclassrecognition/>MSRC2</a>,<a href=http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html>NYU2</a>)
+
+  Padenti is an Open Source implementation of the Random Forests classifier specifically
+  suited for Computer Vision applications that use simple per-pixel local features (e.g.
+  class labeling, objects segmentation etc.). Both the training and the prediction are
+  accelerated on GPUs using the OpenCL framework.
+
+  The library has been developed by the <a href=http://www.ehw.ieiit.cnr.it/?q=computervision>
+  Engineering for Health and Wellbeing</a> group at the
+  <a href=http://www.ieiit.cnr.it/>Institute of Electronics, Computer and Telecommunication Engineering</a> of the National Research Council of Italy (CNR).
+
+  Features include:
+  - fast training of large datasets using OpenCL
+  - support for both NVIDIA and AMD GPUs
+  - support of arbitrary image pixel type and number of channels
+  - support of arbitrary per-pixel features through a custom OpenCL C function
+  
+  "Padenti" is the word in Sardinian language (in its variant of the Mogoro village) for "Forest".
+
+  For installation, usage and a small tutorial please consult the following sections:
+  - \subpage installation Installation and Usage
+  - \subpage tutorial Tutorial
+
+ */
+
+/*!
+  \page installation Installation
+  
+  \section deps Dependencies
+  - A GNU Linux system
+  - An OpenCL environment from either Nvidia or AMD
+  - A CPU with SS2 instructions support
+  - OpenCV 
+  - Boost (components random, filesystem, chrono and log)
+  - cmake (for compilation and installation)
+  - Doxygen (for documentation generation)
+
+  \section inst Compiling and installing the library
+  \code{.sh}
+  #github clone here
+  cd padenti
+  mkdir build && cd build
+  # The flag -DNVIDIA=True is mandatory for Nvidia OpenCL implementation support
+  cmake -DNVIDIA=True ..
+  make && make doc && make install
+  \endcode
+
+  \section usage Usage
+  A PadentiConfig.cmake file is installed together with the library and it can be used to
+  import the library into new projects
+
+  \code{.sh}
+cmake_minimum_required (VERSION 2.8)
+project (NewProject)
+
+find_package(Padenti REQUIRED)
+
+...
+
+include_directories($Padenti_INCLUDE_DIRS)
+link_directories($Padenti_LIBRARIES_DIR)
+
+...
+
+add_executable(test test.cpp)
+target_link_libraries(test $Padenti_LIBRARIES)
+  \endcode
+
+  Please note that all the required library dependencies (i.e. OpenCV and Boost modules)
+  are included within the PadentiConfig.cmake defined variables.
+
+  \section platform Tested platforms
+  Padenti has been developed and tested on the following configuration:
+  - Ubuntu Linux 14.04LTS
+  - gcc 4.8
+  - NVIDIA CUDA SDK 7.0 (driver version 346.82)
+  - AMD OpenCL (driver version 14.12)
+  - tested GPUs: Nvidia GTX670, AMD R9280X, Nvidia 650M
+ */
+
+/*!
+  \page tutorial Tutorial
+  In this brief step-by-step tutorial we will explain how to use the Padenti library
+  to implement a naive hand segmenter.
+
+  \section dataset Downloading and processing the dataset
+  The input data consists in the depthmaps stream captured by a RGB-D camera. A depthmap is
+  a two dimensional image where pixel data represents the distance (usually in mm) from
+  the camera sensor at that specific pixel location. In this tutorial we are going to use the
+  NYU Hand pose dataset and, more specifically, its subset provided for hand segmentation.
+  The dataset can be downloaded at the following
+  <a href="http://cims.nyu.edu/~tompson/NYU_Hand_Pose_Dataset.htm#download">link</a>.
+
+  Before being used, the dataset must converted in a format compatible with the Padenti
+  library. For this purpose, we can use the process_dataset.py python script shipped with
+  the library (it can be found in the script subfolder). Once the dataset has been downloaded
+  and extracted, we can excute the script as follows
+
+  \code{.sh}
+  python process_dataset.py DATASET_PATH OUT_PATH
+  \endcode
+
+  where DATASET_PATH is the directory containing the original dataset images, while OUT_PATH is
+  the processed dataset destination path. After the script execution ends, OUT_PATH contains
+  two folders (train and test) where the processed images of the
+  training set and the test set are stored.
+
+  For each image of the original dataset, two new images are generated: a 16bit single channel
+  image <IMAGE>_depth.png containing the depth values, and a RGB image representing the
+  depthmap labelling. Labels mark the depthmap pixels as hand (red color) or background
+  (blue colors). Pixels that must not be processed (in this case, pixels whose depth values
+  is greater than 2m) are labeles with black. A labels image example is shown below
+
+  \image html labels_example.png ""
+
+  \note The test set is built by randomly leaving 10% of the images out of the orginal dataset.
+  
+  \section feature Defining a feature
+  Features are at the heart of the learning problem. In the case of the Padenti library, we
+  tackle computer vision problems where features are defined locally on a per-pixel basis.
+  This means that features are rather simple and usally work on the value stored at the
+  current pixels (or at a subset of neighbouring pixels).
+
+  To generalize with respect to arbitrary features, Padenti provides to the user some
+  facilities to define custom features. We define a standard OpenCL C function prototype that
+  must be implemented within a feature.cl file and passed to the library. The function prototype
+  is the following
+
+  \code{.c}
+feat_t computeFeature(__read_only image_t image,
+                      uint nChannels, uint width, uint height, int2 coords,
+                      __global int *treeLeftChildren,
+                      __global float *treePosteriors,
+                      __read_only image2d_t imageNodesID,
+                      __local feat_t *features, uint featDim)
+  {....}
+  \endcode
+
+  image can be a bidimensional image2d_t object with up to 4 channels or an image3d_t object
+  with single-value channels and an arbitrary number of layers. nChannels, width and height
+  specify the number of channels (or layers for 3D images) and the width and height of each
+  image channel (or layer). coords stores the 2D coordinates of the currently processed pixel.
+  treeLeftChildren and treePosteriors are the values of the left children index and per-class
+  posterior probabilities for all the nodes of the currently used tree, stored consecutively in
+  a breadth-first fashion (i.e. sorted by node index). Finally, the features pointer stores the
+  features values, while featDim indicates the feature dimension (i.e. number of entries in the
+  feature vector).
+
+  Returning to the original problem, previous works in the computer vision field proposed
+  different features for body-parts segmentation, some of which can be applied to hand
+  segmentation as well. Here we consider a simplified version of the features applied in
+  <a href=http://research.microsoft.com/en-us/projects/vrkinect/>this work</a> and defined as
+
+  \f[
+  f_{\mathbf{u}}(\mathcal{D},\mathbf{x}) = \mathcal{D}(\mathbf{x}) - \frac{\mathcal{D}(\mathbf{x}+\mathbf{u})}{D(\mathbf{x})}*d
+  \f]
+
+  where \f$\mathcal{D}\f$ is the depthmap image, \f$\mathbf{x}\f$ are the current pixel
+  coordinates, \f$\mathbf{u}\f$ is an offset vector and \f$d\f$ is a reference depth value.
+  This feature returns strong a response in the presence of depth discontinuities. Combined
+  with the Random Forests framework, the feature is able to discrimate with success among
+  body parts. In this tutorial we will use the same feature to discrimante between hand pixels
+  and background pixels.
+
+  The OpenCL C feature implementaion using the above feature is shown below:
+  
+  \code{.c}
+// The feat_type.cl file is generated at run-time and store a "feat_t" typedef
+// definition where the feature items value and response type is defined.
+#include <feat_type.cl>
+
+
+#define TARGET_DEPTH (500.0f)
+#define BG_RESPONSE (10000.0f)
+
+
+feat_t computeFeature(__read_only image2d_t image,
+		      uint nChannels, uint width, uint height, int2 coords,
+		      __global int *treeLeftChildren,
+		      __global float *treePosteriors,
+		      __read_only image2d_t imageNodesID,
+		      __local feat_t *features, uint featDim)
+{
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+  feat_t depth, response;
+  int2 offset;
+  bool outOfBorder;
+
+  // Read the depth value at current pixel
+  depth = (feat_t)read_imageui(image, sampler, coords).x;
+  response = depth;
+
+  // Compute the dispacement vector with respect to current coordinates
+  // Note: to access feature values we always use the ACCESS_FEATURE macro, where the
+  // first value is the features pointer, the second value is the item index and the
+  // last value is the feature dimension
+  offset.x = 
+    coords.x+(int)round((float)ACCESS_FEATURE(features, 0, featDim)*TARGET_DEPTH/depth);
+  offset.y =
+    coords.y+(int)round((float)ACCESS_FEATURE(features, 1, featDim)*TARGET_DEPTH/depth);
+  
+  // Check if the displacement vector is beyond the image borders. In that case,
+  // the depth value is set to BG_RESPONSE
+  outOfBorder = offset.x<0 || offset.x>=width || offset.y<0 || offset.y>=height;
+  depth = (outOfBorder) ? (feat_t)BG_RESPONSE : (feat_t)read_imageui(image, sampler, offset).x;
+
+  // Finally, return the feature response, defined as the difference between the depth values
+  // at the pixel coords and at the neighbour pixel
+  response -= (depth) ? depth : (feat_t)BG_RESPONSE;
+
+  return response;
+ }
+  \endcode
+
+  Please look at the comments for futher details about features implementation.
+
+  \note The implementation of custom features requires a minimum knowledge of the OpenCL C
+  language and image objects processing within OpenCL kernels.
+
+  \section train Training
+  The test_tree_trainer.cpp file in the test subfolder provides the code for training a
+  single Random Forest tree. In this section we will walk through the basic classes that the
+  Padenti library makes available to load a training set and train multiple trees of a
+  random forests ensemble.
+
+  The Padenti library uses C++ templates to generalize the Random Forests implementation
+  with respect to both input images type (pixel type and number of channels) and features
+  type (number and type of entries). Here we consider single channel 16bit depthmaps. We
+  thus start with the definition of the classes responsible of training set loading
+  
+  \code{.cpp}
+  typedef CVImageLoader<unsigned short, 1> DepthmapLoaderT;
+  typedef CVRGBLabelsLoader LabelsLoaderT;
+  typedef UniformImageSampler<unsigned short, 1> SamplerT;
+  typedef TrainingSet<unsigned short, 1> TrainingSetT;
+  \endcode
+
+  The CVImageLoader is a generic class responsible of loading an image from disk. We are
+  going to use this class to load deapthmaps, so we specialize the template to work with
+  single channel images with unsigned short values. The CVRGBLabelsLoader class is similar to
+  the CVImageLoader, but it works specifically with RGB images, so we do not need template
+  specialization. The class will be used class to read labels images from disk. Finally,
+  both the class for depthmaps sampling (UniformImageSampler) and training set handling
+  (TrainingSet) must be specialized with the depthmaps pixel type and number of channels.
+
+  Templates are also used to generalize the Random Forests implementation with respect to
+  feature type and size. Since the feature is defined by the 2D offset \f$\mathbf{u}\f$
+  with respect to current pixel location \f$\mathbf{x}\f$, we represent it as a 2D short int
+  vector and declare the template specialization for the tree and trainer classes as follows
+
+  \code{.cpp}
+  typedef Tree<short int, 2, N_LABELS> TreeT;
+  typedef TreeTrainerParameters<short int, 2> TreeTrainerParametersT;
+  typedef CLTreeTrainer<unsigned short, 1, short int, 2, N_LABELS> TreeTrainerT;
+  \endcode
+
+  the names of classes are self explanatory (please refer to the documentation for additional
+  details).
+
+  Once the templates specialization has been defined, we can instantiate the corresponding
+  classes.
+
+  \code{.cpp}
+static const unsigned char RGB2LABEL[][3] ={
+  {255, 0, 0},      // hand
+  {0, 0, 255},    // body
+};
+static const size_t N_LABELS = sizeof(RGB2LABEL)/(sizeof(unsigned char)*3);
+
+DepthmapLoaderT depthmapLoader;
+LabelsLoaderT labelsLoader(RGB2LABEL, N_LABELS);
+SamplerT sampler(N_SAMPLES);
+TrainingSetT trainingSet(trainingSetPath, "_depth.png", "_labels.png", N_LABELS,
+                         depthmapLoader, labelsLoader, sampler);
+  \endcode
+
+  depthmapLoader and labelsLoader are responsible of depthmap/labels loading. The latter requires
+  a Nx3 matrix specifying the RGB values associated to each class label (defined by the RGB2LABEL
+  matrix in the code above). sampler executes the depthmap sampling and, for each depthmap,
+  extracts up to N_SAMPLES. trainingSet loads the training set depthmap/labels pairs stored in
+  the path specified by trainingSetPath and employs the depthmapLoader/labelsLoader for images
+  pairs loading and sampler for sampling.
+
+  \code{.cpp}
+    TreeT tree(treeID, TREE_DEPTH);
+    TreeTrainerT trainer(feature_clPath);
+  \endcode
+
+  Next, we create a TreeT object tree, identified univocally by the treeID index and with depth
+  TREE_DEPTH. The trainer object is responsible of training the TreeT object on the loaded
+  training set. The first parameter specifies the directory where the previously defined file 
+  feature.cl containing the feature implementation is stored.
+
+  Before launching the training, we must specify the training parameters. Here we suppose that
+  we extract 2000 pixels at each pixel and test 20 thresholds for each feature. We bound the
+  features offset within the range ]0,60[ and the tresholds within ]-200,200[. Finally, we stop
+  the training of a node if less than 300 pixels reach that node. We can specify these parameters
+  filling the corresponding fields of a TreeTrainerParametersT structure
+
+  \code{.cpp}
+    TreeTrainerParametersT params;
+    params.nFeatures = 2000;
+    params.nThresholds = 20;
+    params.featLowBounds[0] = -60;
+    params.featLowBounds[1] = -60;
+    params.featUpBounds[0] = 60;
+    params.featUpBounds[1] = 60;
+    params.thrLowBound = -200;
+    params.thrUpBound = 200;
+    params.perLeafSamplesThr = 300;
+  \endcode
+
+  We can now launch the training
+
+  \code{.cpp}
+  trainer.train(tree, trainingSet, params, 1, TRAIN_DEPTH);
+  \endcode
+
+  Once the training ends, we can save the tree to disk using the tree save method
+
+  \code{.cpp}
+  tree.save(treePath);
+  \endcode
+
+  
+  \section test Test
+  After one or more tree has been trained, we can use the Padenti library to predict which
+  pixels belong to the hand for an unseen input depthmap. Similarly to the previous
+  section, we will go through the steps needed for loading a trained forest and performing hand
+  segmentation using the Padenti library. The output of the test is a two layers float image
+  where the first layer stores the probability \f$P(hand|\mathbf{x})\f$ for each pixel
+  \f$\mathbf{x}\f$, i.e. the predicted probability for that pixel of being a hand pixel, 
+  whereas the second layers stores the \f$P(background|\mathbf{x})\f$ posterior probability
+  (i.e. the probability of being a background pixel).
+
+  We start by specializing the template classes needed for tree/depthmap loading and
+  classification
+
+  \code{.cpp}
+typedef Tree<short int, 2, N_LABELS> TreeT;
+typedef Image<unsigned short, 1> DepthT;
+typedef Image<unsigned char, 1> MaskT;
+typedef Image<float, N_LABELS> PredictionT;
+typedef CVImageLoader<unsigned short, 1> ImageLoaderT;
+typedef CLClassifier<unsigned short, 1, short, 2, N_LABELS> ClassifierT;
+  \endcode
+
+  The Image class defines a generic container for image pixels, while the CLClassifier
+  implement the Random Forests classification. We can now load the trees from disk and
+  pass them to the classifier object
+
+  \code{.cpp}
+  TreeT trees[nTrees];
+  ClassifierT classifier(feature_clPath);
+
+  for (int t=0; t<nTrees; t++)
+  {
+    trees[t].load(treesPath[t], t);
+    classifier << trees[t];
+  }
+  \endcode
+
+  As in the training case, the classifier needs the path of the directory where the feature
+  implementation is stored. Random Forests trees can be easily loaded into the classifier
+  using the left shift operator.
+
+  We can now load the input depthmap. Since not all depthmpap pixels need to be processed, 
+  we use the OpenCV library to create a binary mask where only pixels whose depth value is
+  different from zeros are selected
+  
+  \code{.cpp}
+  // Load depth 
+  ImageLoaderT imageLoader;
+  DepthT depthmap = imageLoader.load(depthmapPath);
+
+  // Create a mask
+  MaskT mask(depthmap.getWidth(), depthmap.getHeight());
+
+  // Wrap Padenti image objects within an OpenCV matrix ...
+  cv::Mat cvDepth(depthmap.getHeight(), depthmap.getWidth(), CV_16U,
+		  reinterpret_cast<unsigned char*>(depthmap.getData()));
+  cv::Mat cvMask(cvDepth.rows, cvDepth.cols, CV_8U,
+		 reinterpret_cast<unsigned char*>(mask.getData()));
+
+  // ... and use OpenCV function to fill the mask
+  cvMask.setTo(0);
+  cvMask.setTo(1, cvDepth>0);
+  \endcode
+
+  Once the depthmap and mask objects have been initialized, we can perform prediction
+  
+  \code{.cpp}
+  PredictionT prediction(cvDepth.cols, cvDepth.rows);
+  classifier.predict(depthmap, prediction, mask);
+  \endcode
+
+  The prediction image will contain the classification result. Using the OpenCV library
+  we can wrap each layer into a 2D float image and show it
+  
+  \code{.cpp}
+  cv::Mat cvHand(cvDepth.rows, cvDepth.cols, CV_32F,
+                 reinterpret_cast<void*>(prediction.getData()));
+  cv::Mat cvBackground(cvDepth.rows, cvDepth.cols, CV_32F,
+                       reinterpret_cast<void*>(prediction.getData()+cvDepth.rows*cvDepth.cols));
+
+  cv::imshow("hand", cvHand);
+  cv::imshow("background", cvBackground);
+  \endcode
+
+  A prediction result example is shown below
+
+  \image html hand_seg_result.png ""
+
+  While the per-pixel segmentation is still not perfect, it provides a strong signal that can
+  be used as the input of another algorithm (i.e. camshift) to easily track the hand position
+  within the image.
+ */
+
+#endif // __PADENTI_HPP

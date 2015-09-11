@@ -38,4 +38,5 @@ cmake -DNVIDIA=True ..
 make && make doc && make install
 ```
 
-For more imformation about library usage and a small tutorial please consult the Doxygen documentation.
+For more information about library usage and a small tutorial please consult the
+[Doxygen documentation](http://muogoro.github.io/padenti).

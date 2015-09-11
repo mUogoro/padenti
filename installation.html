@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>Padenti: Main Page</title>
+<title>Padenti: Installation</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -38,8 +38,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </script>
   <div id="navrow1" class="tabs">
     <ul class="tablist">
-      <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
+      <li><a href="index.html"><span>Main&#160;Page</span></a></li>
+      <li class="current"><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
       <li>
@@ -60,7 +60,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -75,35 +74,67 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+<div id="nav-path" class="navpath">
+  <ul>
+<li class="navelem"><a class="el" href="index.html">index</a></li>  </ul>
+</div>
+</div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">Padenti Documentation</div>  </div>
+<div class="title">Installation </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><div class="image">
-<img src="padenti_results.png" alt="padenti_results.png"/>
-<div class="caption">
-Results for hand-parts labeling and class labelling on the MSRC2 and NYU2 datasets</div></div>
-<p>(<a href="http://research.microsoft.com/en-us/projects/objectclassrecognition/">MSRC2</a>,<a href="http://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html">NYU2</a>)</p>
-<p>Padenti is an Open Source implementation of the Random Forests classifier specifically suited for Computer Vision applications that use simple per-pixel local features (e.g. class labeling, objects segmentation etc.). Both the training and the prediction are accelerated on GPUs using the OpenCL framework.</p>
-<p>The library has been developed by the <a href="http://www.ehw.ieiit.cnr.it/?q=computervision">Engineering for Health and Wellbeing</a> group at the <a href="http://www.ieiit.cnr.it/">Institute of Electronics, Computer and Telecommunication Engineering</a> of the National Research Council of Italy (CNR).</p>
-<p>Features include:</p>
+<div class="textblock"><h1><a class="anchor" id="deps"></a>
+Dependencies</h1>
 <ul>
-<li>fast training of large datasets using OpenCL</li>
-<li>support for both NVIDIA and AMD GPUs</li>
-<li>support of arbitrary image pixel type and number of channels</li>
-<li>support of arbitrary per-pixel features through a custom OpenCL C function</li>
+<li>A GNU Linux system</li>
+<li>An OpenCL environment from either Nvidia or AMD</li>
+<li>A CPU with SS2 instructions support</li>
+<li>OpenCV</li>
+<li>Boost (components random, filesystem, chrono and log)</li>
+<li>cmake (for compilation and installation)</li>
+<li>Doxygen (for documentation generation)</li>
 </ul>
-<p>"Padenti" is the word in Sardinian language (in its variant of the Mogoro village) for "Forest".</p>
-<p>For installation, usage and a small tutorial please consult the following sections:</p>
+<h1><a class="anchor" id="inst"></a>
+Compiling and installing the library</h1>
+<div class="fragment"><div class="line">git clone https:<span class="comment">//github.com/mUogoro/padenti.git padenti</span></div>
+<div class="line">cd padenti</div>
+<div class="line">mkdir build &amp;&amp; cd build</div>
+<div class="line"><span class="preprocessor"># The flag -DNVIDIA=True is mandatory for Nvidia OpenCL implementation support</span></div>
+<div class="line"><span class="preprocessor"></span>cmake -DNVIDIA=True ..</div>
+<div class="line">make &amp;&amp; make doc &amp;&amp; make install</div>
+</div><!-- fragment --><h1><a class="anchor" id="usage"></a>
+Usage</h1>
+<p>A PadentiConfig.cmake file is installed together with the library and it can be used to import the library into new projects</p>
+<div class="fragment"><div class="line">cmake_minimum_required (VERSION 2.8)</div>
+<div class="line">project (NewProject)</div>
+<div class="line"></div>
+<div class="line">find_package(Padenti REQUIRED)</div>
+<div class="line"></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line">include_directories($Padenti_INCLUDE_DIRS)</div>
+<div class="line">link_directories($Padenti_LIBRARIES_DIR)</div>
+<div class="line"></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line">add_executable(test test.cpp)</div>
+<div class="line">target_link_libraries(test $Padenti_LIBRARIES)</div>
+</div><!-- fragment --><p>Please note that all the required library dependencies (i.e. OpenCV and Boost modules) are included within the PadentiConfig.cmake defined variables.</p>
+<h1><a class="anchor" id="platform"></a>
+Tested platforms</h1>
+<p>Padenti has been developed and tested on the following configuration:</p>
 <ul>
-<li><a class="el" href="installation.html">Installation</a> Installation and Usage</li>
-<li><a class="el" href="tutorial.html">Tutorial</a> Tutorial </li>
+<li>Ubuntu Linux 14.04LTS</li>
+<li>gcc 4.8</li>
+<li>NVIDIA CUDA SDK 7.0 (driver version 346.82)</li>
+<li>AMD OpenCL (driver version 14.12)</li>
+<li>tested GPUs: Nvidia GTX670, AMD R9280X, Nvidia 650M </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 11 2015 12:25:30 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 11 2015 12:25:29 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -1,0 +1,7 @@
+\form#0:\[ f_{\mathbf{u}}(\mathcal{D},\mathbf{x}) = \mathcal{D}(\mathbf{x}) - \frac{\mathcal{D}(\mathbf{x}+\mathbf{u})}{D(\mathbf{x})}*d \]
+\form#1:$\mathcal{D}$
+\form#2:$\mathbf{x}$
+\form#3:$\mathbf{u}$
+\form#4:$d$
+\form#5:$P(hand|\mathbf{x})$
+\form#6:$P(background|\mathbf{x})$

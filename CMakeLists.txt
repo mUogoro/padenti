@@ -34,9 +34,6 @@ execute_process(COMMAND mkdir kernels)
 execute_process(COMMAND mkdir kernels/padenti)
 execute_process(COMMAND ${PROJECT_SOURCE_DIR}/script/ksrc_to_hex.sh ${PROJECT_SOURCE_DIR}/src/padenti/kernels ${PROJECT_BINARY_DIR}/kernels/padenti)
 
-file(GLOB HEADER_FILES src/padenti/*.hpp)
-install(FILES ${HEADER_FILES} DESTINATION include/padenti)
-
 if (NVIDIA)
   if (NVIDIA MATCHES "True")
     set(Padenti_OPENCL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include/padenti/nvidia_opencl_headers)
@@ -44,13 +41,17 @@ if (NVIDIA)
   endif (NVIDIA MATCHES "True")
 endif (NVIDIA)
 
-file(GLOB KERNEL_FILES ${PROJECT_BINARY_DIR}/kernels/*.inc)
-install(FILES ${KERNEL_FILES} DESTINATION include/padenti/kernels)
-
 get_filename_component(Padenti_INSTALL_DIR ${CMAKE_INSTALL_PREFIX} ABSOLUTE)
 configure_file("${PROJECT_SOURCE_DIR}/PadentiConfig.cmake.in"
                "${PROJECT_BINARY_DIR}/PadentiConfig.cmake")
 install(FILES ${PROJECT_BINARY_DIR}/PadentiConfig.cmake DESTINATION share/padenti)
+
+file(GLOB HEADER_FILES src/padenti/*.hpp)
+install(FILES ${HEADER_FILES} DESTINATION include/padenti)
+
+file(GLOB KERNEL_FILES "${PROJECT_BINARY_DIR}/kernels/padenti/*.inc")
+install(FILES ${KERNEL_FILES} DESTINATION include/padenti)
+
 
 add_subdirectory(test)
 

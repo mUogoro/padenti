@@ -38,6 +38,7 @@ struct ConsumerProducerData
   boost::unordered_map<int, int> *frontierIdxMap;
   unsigned int **histogram;
   unsigned char *perImgHistogram;
+  size_t perImgHistogramStride;
   const TrainingSet<ImgType, nChannels> *trainingSet;
   bool *skippedTsImg;
   bool *toSkipTsImg;
@@ -63,6 +64,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
   unsigned int currDepth, unsigned int currSlice)
 {
   size_t perNodeHistogramSize = params.nFeatures*params.nThresholds*nClasses;
+  size_t perImgHistogramStride = m_maxTsImgSamples*params.nFeatures*params.nThresholds;
   unsigned int frontierSize = m_frontierIdxMap.size();
   unsigned int frontierOffset = currSlice*m_histogramSize;
 
@@ -88,6 +90,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
   consumerProducerData.frontierIdxMap = &m_frontierIdxMap;
   consumerProducerData.histogram = m_histogram;
   consumerProducerData.perImgHistogram = m_clPerImgHistBuffPinnPtr;
+  consumerProducerData.perImgHistogramStride = perImgHistogramStride;
   consumerProducerData.trainingSet = &trainingSet;
   consumerProducerData.skippedTsImg = m_skippedTsImg;
   consumerProducerData.toSkipTsImg = m_toSkipTsImg;
@@ -308,8 +311,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
 				  CL_TRUE,
 				  0,
 				  prevImage.getNSamples()*params.nFeatures*params.nThresholds*sizeof(cl_uchar),
-				  (void*)(m_clPerImgHistBuffPinnPtr+
-					  queueIdx*currImage.getNSamples()*params.nFeatures*params.nThresholds),
+				  (void*)(m_clPerImgHistBuffPinnPtr+queueIdx*perImgHistogramStride),
 				  NULL, &endReadEvent);
       
       // Queue the current per-image histogram and predicted end nodes
@@ -386,8 +388,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
 				CL_TRUE,
 				0,
 				currImage.getNSamples()*params.nFeatures*params.nThresholds*sizeof(cl_uchar),
-				(void*)(m_clPerImgHistBuffPinnPtr+
-					queueIdx*currImage.getNSamples()*params.nFeatures*params.nThresholds),
+				(void*)(m_clPerImgHistBuffPinnPtr+queueIdx*perImgHistogramStride),
 				NULL, &endReadEvent);
   
     // Queue the current per-image histogram and predicted end nodes
@@ -466,6 +467,7 @@ void *_updateGlobalHistogram(void *_data)
   boost::unordered_map<int, int> *frontierIdxMap = data->frontierIdxMap;
   unsigned int **histogram = data->histogram;
   unsigned char *perImgHistogram = data->perImgHistogram;
+  size_t perImgHistogramStride = data->perImgHistogramStride;
   const TrainingSet<ImgType, nChannels> &trainingSet = *data->trainingSet;
   bool *skippedTsImg = data->skippedTsImg;
   bool *toSkipTsImg = data->toSkipTsImg;
@@ -506,8 +508,7 @@ void *_updateGlobalHistogram(void *_data)
 
     
     bool toSkipImg = true;
-    size_t perImgOffset = 
-      queueIdx * (currImage.getNSamples()*params.nFeatures*params.nThresholds);
+    size_t perImgOffset = queueIdx * perImgHistogramStride;
     size_t perImgNodeOffset = queueIdx*maxImgWidth*maxImgHeight;
     for (unsigned int s=0; s<currImage.getNSamples();
 	 s++, perImgOffset+=(params.nThresholds*params.nFeatures))

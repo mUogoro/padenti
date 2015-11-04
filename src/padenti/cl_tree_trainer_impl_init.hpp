@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -304,6 +306,15 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
     const TreeNode<FeatType, FeatDim> &rootNode = tree.getNode(0); 
     std::copy(trainingSet.getPriors(), trainingSet.getPriors()+nClasses, rootNode.m_posterior);
   }
+
+
+  // Finally, init the random seed for features and thresholds sampling
+  /*
+  boost::random::mt19937 gen;
+  boost::random::uniform_int_distribution<> dist(0, (2<<30)-1);
+  m_seed = dist(gen);
+  m_clPerImgHistKern.setArg(22, m_seed);
+  */
 
   delete []tmpFeatUpBounds;
   delete []tmpFeatLowBounds;

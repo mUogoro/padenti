@@ -18,7 +18,7 @@
  ******************************************************************************/
 
 #include <boost/chrono/chrono.hpp>
-#include <boost/log/trivial.hpp>
+//#include <boost/log/trivial.hpp>
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -174,6 +174,12 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
        * \todo move integer-to-float conversion to prng, i.e. assume prngs work on floats
        * \todo compute features directly inside kernel during learning
        */
+      /*
+      unsigned int seed[4] = {tree.getID()^m_seed,
+			      nodeID^m_seed,
+			      perNodeBestFeatures[bestID]^m_seed,
+			      m_seed};
+      */
       unsigned int seed[4] = {tree.getID(),
 			      nodeID,
 			      perNodeBestFeatures[bestID],
@@ -201,7 +207,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
 	std::copy(state, state+4, seed);
       }
 
-	
+      
       seed[0] = tree.getID();
       seed[1] = nodeID;
       seed[2] = perNodeBestFeatures[bestID];
@@ -214,6 +220,14 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
       *currNode.m_threshold = params.thrLowBound +
 	(FeatType)((float)state[perNodeBestThresholds[bestID]%4]/0xFFFFFFFF*
 		   (params.thrUpBound-params.thrLowBound));
+      
+
+      /*
+      *currNode.m_threshold = params.thrLowBound + 
+       (FeatType)((float)perNodeBestThresholds[bestID]*
+      	   (params.thrUpBound-params.thrLowBound)/params.nThresholds);
+      */
+
 
       // Update current node left child
       *currNode.m_leftChild = nodeID*2+1;
@@ -259,9 +273,11 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
 			       toWriteNodes*2*nClasses*sizeof(cl_float),
 			       (void*)(&tree.getPosteriors()[(startNode+2+1)*nClasses]));
 
+  /*
   boost::chrono::duration<double> learnTime = 
     boost::chrono::duration_cast<boost::chrono::duration<double> >(boost::chrono::steady_clock::now()-startLearn);
   BOOST_LOG_TRIVIAL(info) << "Best feature/threshold for nodes " << startNode
 			  << "-" << endNode << " learnt in "
 			  << learnTime.count() << " seconds";
+  */
 }

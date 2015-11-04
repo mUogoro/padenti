@@ -29,14 +29,24 @@ using namespace boost::filesystem;
 #define MAX_IMG_CHANNELS (10)
 
 template <typename type, unsigned int nChannels>
+TrainingSet<type, nChannels>::TrainingSet(unsigned int nClasses):
+  m_nImages(0),
+  m_nClasses(nClasses)
+{
+  m_priors = new float[m_nClasses];
+  std::fill_n(m_priors, m_nClasses, 0.0f);
+}
+
+
+template <typename type, unsigned int nChannels>
 TrainingSet<type, nChannels>::TrainingSet(const std::string &tsPathStr,
 					  const std::string &dataSuffix, const std::string &labelsSuffix,
 					  unsigned int nClasses,
 					  ImageLoader<type, nChannels> &dataLoader,
 					  ImageLoader<unsigned char, 1> &labelsLoader,
 					  const ImageSampler<type, nChannels> &sampler):
-  m_nClasses(nClasses),
-  m_tsPath(tsPathStr)
+  m_nImages(0),
+  m_nClasses(nClasses)
 {
   std::vector<std::pair<std::string, std::string> > imgLabelsPairs;
   path tsPath(tsPathStr);
@@ -99,21 +109,23 @@ TrainingSet<type, nChannels>::TrainingSet(const std::string &tsPathStr,
   m_priors = new float[m_nClasses];
   std::fill_n(m_priors, m_nClasses, 0.0f);
 
+  double *tmpPriors = new double[m_nClasses];
+  std::fill_n(tmpPriors, m_nClasses, 0.0f);
   for (typename std::vector<TrainingSetImage<type, nChannels> >::const_iterator it=m_images.begin();
        it!=m_images.end(); ++it)
   {
     const float *priors = it->getPriors();
     for (unsigned int i=0; i<m_nClasses; i++)
     {
-      m_priors[i] += priors[i];
+      tmpPriors[i] += priors[i];
     }
   }
   for (int i=0; i<m_nClasses; i++)
   {
-    m_priors[i] *= 1.0f/(float)m_nImages;
+    m_priors[i] = static_cast<float>(tmpPriors[i]/m_nImages);
   }
   
-
+  delete []tmpPriors;
   delete []samplesBuff;
   delete []labelsBuff;
   delete []imgBuff;
@@ -131,6 +143,23 @@ template <typename type, unsigned int nChannels>
 const std::vector<TrainingSetImage<type, nChannels> > &TrainingSet<type, nChannels>::getImages() const
 {
   return m_images;
+}
+
+
+template <typename type, unsigned int nChannels>
+TrainingSet<type, nChannels>& TrainingSet<type, nChannels>::operator<<(const TrainingSetImage<type, nChannels> &image)
+{
+  m_images.push_back(image);
+  
+  // Update training set posterior probabilities
+  for (int c=0; c<m_nClasses; c++)
+  {
+    double pC = m_priors[c];
+    double pCImg = image.getPriors()[c];
+    m_priors[c] = static_cast<float>(pC*m_nImages/(m_nImages+1) +
+				     pCImg/(m_nImages+1));
+  }
+  m_nImages++;
 }
 
 

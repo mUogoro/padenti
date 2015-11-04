@@ -21,7 +21,7 @@
 #include <queue>
 #include <pthread.h>
 #include <boost/chrono/chrono.hpp>
-#include <boost/log/trivial.hpp>
+//#include <boost/log/trivial.hpp>
 #include <emmintrin.h>
 //#include <nmmintrin.h>
 //#include <immintrin.h>
@@ -428,7 +428,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
   // DONE with local histograms
   pthread_join(consumer, NULL);
 
-
+  /*
   double totTime = static_cast<double>(totWriteTime)*1.e-9;
   BOOST_LOG_TRIVIAL(info) << "Total local histogram write time: "
 			  << totTime
@@ -447,7 +447,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
 			  << " seconds";
                           // << (avg: " << totTime/tsImages.size()
 			  //<< " seconds)";
-  
+  */
 }
 
 
@@ -650,8 +650,9 @@ void *_updateGlobalHistogram(void *_data)
 
   boost::chrono::duration<double> totGlobHistUpdateSeconds = 
     boost::chrono::duration_cast<boost::chrono::duration<double> >(totGlobHistUpdateTime);
+  /*
   BOOST_LOG_TRIVIAL(info) << "Total global histogram update time: " << totGlobHistUpdateSeconds.count()
 			  << " seconds (avg: " << totGlobHistUpdateSeconds.count()/tsImages.size()
 			  << " seconds)";
-
+  */
 }

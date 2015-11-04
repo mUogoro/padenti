@@ -375,7 +375,7 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
   {
     m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image3D*>(m_clImg),
 				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
-  } 
+  }
   region[2]=1;
   m_clQueue.enqueueWriteImage(m_clMask, CL_FALSE, origin, region, 0, 0, (void*)mask.getData());
 
@@ -471,11 +471,15 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
 	for (int u=0; u<image.getWidth(); u++, posteriorPtr++, currPosteriorPtr++, maskPtr++)
 	{
           if (!(*maskPtr)) continue;
-	  *posteriorPtr += *currPosteriorPtr/m_nTrees;
+	  *posteriorPtr += *currPosteriorPtr;
 	}
       }
     }
   }
+
+  // Normalize posterior
+  for (int i=0; i<image.getWidth()*image.getHeight()*nClasses; i++) 
+    posterior.getData()[i] /= m_nTrees;
 
   // Done
   delete m_clImg;

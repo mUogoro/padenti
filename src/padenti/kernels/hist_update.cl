@@ -47,6 +47,7 @@ __kernel void computePerImageHistogram(__read_only image_t image,
 				       __global float *treePosteriors,
 				       __local feat_t *tmp,
 				       __local feat_t *featuresBuff)
+                                       //,uint baseSeed)
 {
   const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
   uint4 seed;
@@ -62,6 +63,13 @@ __kernel void computePerImageHistogram(__read_only image_t image,
   seed.y = nodeID;
   seed.z = get_global_id(1);
   seed.w = 0; // Non zero value for 4th int???
+
+  /*
+  seed.x = treeID^baseSeed;
+  seed.y = nodeID^baseSeed;
+  seed.z = get_global_id(1)^baseSeed;
+  seed.w = baseSeed;
+  */
 
   /** 
    * \todo better int32-to-float32 conversion
@@ -122,6 +130,19 @@ __kernel void computePerImageHistogram(__read_only image_t image,
     seed.w = 1;
     //offset = get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
     perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
+
+    /*
+    for (uint t=0; t<nThresholds; t++)
+    { 
+      thr = thrLowBound + (feat_t)((float)t*(thrUpBound-thrLowBound)/nThresholds);
+      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
+      //offset += get_global_size(1);
+      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
+      perImageHistogram += get_global_size(1);
+    }
+    */
+    
+    
     for (uint t=0; t<nThresholds;)
     { 
       seed = md5Rand(seed);
@@ -161,6 +182,7 @@ __kernel void computePerImageHistogram(__read_only image_t image,
       perImageHistogram += get_global_size(1);
       ++t;
     }
+    
   }
 }
 

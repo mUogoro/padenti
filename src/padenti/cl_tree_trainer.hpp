@@ -93,6 +93,7 @@ private:
   unsigned int *m_bestThresholds;
   float *m_bestEntropies;
 
+  unsigned int m_seed;
 
 private:
   void _initTrain(Tree<FeatType, FeatDim, nClasses> &tree,

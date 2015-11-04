@@ -17,6 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 
+#define EPS (1.e-6)
+
 __kernel void learnBestFeature(__global unsigned int *histogram,
 			       __global unsigned int *perClassTotSamples,
 			       unsigned int nFeatures, unsigned int nThresholds,
@@ -27,7 +29,7 @@ __kernel void learnBestFeature(__global unsigned int *histogram,
 			       __global float *entropies
 			       )
 {
-  float tmp, h, hL, hR, currBestEntropy, eps=1.e-12;
+  float tmp, h, hL, hR, currBestEntropy;
   int offset, nL, nR, currBestFeature, currBestThreshold;
   int nodeID, featureID, thrID;
 
@@ -80,15 +82,16 @@ __kernel void learnBestFeature(__global unsigned int *histogram,
 
       //tmp = (float)(histogram[offset] + histogram[offset+1])/(nL+nR);
       tmp = ((float)perClassTotSamples[nodeID*nClasses+l])/(nL+nR);
-      h -= (tmp<=eps) ? 0.0f : tmp*log2(tmp);
+      h -= (tmp<=EPS) ? 0.0f : tmp*log2(tmp);
 
       tmp = (nL) ? (float)histogram[offset]/nL : 0.0f;
-      hL -= (tmp<=eps) ? 0.0f : tmp*log2(tmp);
+      hL -= (tmp<=EPS) ? 0.0f : tmp*log2(tmp);
 
       tmp = (nR) ? (float)(perClassTotSamples[nodeID*nClasses+l]-histogram[offset])/nR : 0.0f;
-      hR -= (tmp<=eps) ? 0.0f : tmp*log2(tmp);
+      hR -= (tmp<=EPS) ? 0.0f : tmp*log2(tmp);
     }
     tmp = h - ((float)nL/(nL+nR)*hL + (float)nR/(nL+nR)*hR); // Final information gain
+    //tmp = 2.0*tmp/(h+hL+hR); // Final normalized information gain
 
     if (!i || tmp>currBestEntropy)
     {

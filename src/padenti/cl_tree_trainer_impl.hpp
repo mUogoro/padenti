@@ -26,7 +26,7 @@
 #include <iterator>
 #include <utility>
 #include <boost/chrono/chrono.hpp>
-#include <boost/log/trivial.hpp>
+//#include <boost/log/trivial.hpp>
 #include <padenti/cl_tree_trainer.hpp>
 #include <padenti/cl_img_fmt_traits.hpp>
 #include <padenti/cl_feat_fmt_traits.hpp>
@@ -54,7 +54,8 @@
 
 // Size of the fifo queue used to parallelize global histogram updates
 /** \todo parameterize */
-#define GLOBAL_HISTOGRAM_FIFO_SIZE (8)
+//#define GLOBAL_HISTOGRAM_FIFO_SIZE (8)
+#define GLOBAL_HISTOGRAM_FIFO_SIZE (2)
 
 #define WG_WIDTH (4)
 #define WG_HEIGHT (64)
@@ -214,11 +215,13 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::train(
     unsigned int frontierSize = _initFrontier(tree, params, currDepth);
     unsigned int nSlices = _initHistogram(params);
 
+    /*
     if (nSlices>1)
     {
       BOOST_LOG_TRIVIAL(info) << "Maximum allowed global histogram size reached: split in "
 			      << nSlices << " slices";
     }
+    */
 
     // Flag all images as to-be-skipped: the flag will be set to false if at least one
     // image pixel is processed
@@ -237,8 +240,10 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::train(
     boost::chrono::duration<double> perLevelTrainTime =
       boost::chrono::duration_cast<boost::chrono::duration<double> >(boost::chrono::steady_clock::now() - 
 								   perLevelTrainStart);
+    /*
     BOOST_LOG_TRIVIAL(info) << "Depth " << currDepth << " trained in "
 			    << perLevelTrainTime.count() << " seconds";
+    */
   }
 }
 

@@ -19,22 +19,15 @@
 #include "mex.h"
 #include <algorithm>
 #include <padenti/cl_classifier.hpp>
-
-// Note: so far we support only:
-// - (integral) int images with 4 channels
-// - float features of size 10
-typedef unsigned int ImgType;
-static const int N_CHANNELS = 4;
-typedef float FeatType;
-static const int FEAT_SIZE = 10;
+#include "padenti_base.hpp"
 
 
 // Redefine templates
 // TODO: support for arbitrary template parameters
 typedef Image<ImgType, N_CHANNELS> ImageT;
-typedef Tree<FeatType, FEAT_SIZE, 21> TreeT;
-typedef CLClassifier<ImgType, N_CHANNELS, FeatType, FEAT_SIZE, 21> ClassifierT;
-typedef Image<float, 21> PredictionT;
+typedef Tree<FeatType, FEAT_SIZE, N_CLASSES> TreeT;
+typedef CLClassifier<ImgType, N_CHANNELS, FeatType, FEAT_SIZE, N_CLASSES> ClassifierT;
+typedef Image<float, N_CLASSES> PredictionT;
 
 void mexFunction(int nlhs, mxArray *plhs[],
 		 int nrhs, const mxArray *prhs[])
@@ -52,7 +45,9 @@ void mexFunction(int nlhs, mxArray *plhs[],
   // Check input image format
   mwSize nDimImage = mxGetNumberOfDimensions(prhs[1]);
   const mwSize *dimImage = mxGetDimensions(prhs[1]);
-  if (nDimImage<3 || dimImage[0]<N_CHANNELS)
+  mwSize imgChannels = (nDimImage==3) ? 
+    (N_CHANNELS<=4 ? dimImage[0] : dimImage[2]) : 0;
+  if (imgChannels!=N_CHANNELS)
   {
     mexErrMsgTxt("Input image must have at least 4 channels!!!\n");  
   }
@@ -64,7 +59,8 @@ void mexFunction(int nlhs, mxArray *plhs[],
   // images into Padenti. This is equivalent to working on images
   // rotate 90 degrees ccw. Furthermore, this allows to avoid
   // image channels transpose
-  int imgWidth=dimImage[2], imgHeight=dimImage[1];
+  int imgWidth = (N_CHANNELS<=4) ? dimImage[2] : dimImage[1];
+  int imgHeight = (N_CHANNELS<=4) ? dimImage[1] : dimImage[0];
   int clWidth = imgHeight;
   int clHeight = imgWidth;
   ImageT image(reinterpret_cast<ImgType*>(mxGetData(prhs[1])),
@@ -82,12 +78,12 @@ void mexFunction(int nlhs, mxArray *plhs[],
   mwSize outDim[3];
   outDim[0] = imgHeight;
   outDim[1] = imgWidth;
-  outDim[2] = 21;
+  outDim[2] = N_CLASSES;
   plhs[0] = mxCreateNumericArray(3, outDim, mxSINGLE_CLASS, mxREAL);
   
   float *outPixels = reinterpret_cast<float*>(mxGetData(plhs[0]));
   std::copy(prediction.getData(),
-            prediction.getData()+clWidth*clHeight*21,
+            prediction.getData()+clWidth*clHeight*N_CLASSES,
             outPixels);
   
   // Done

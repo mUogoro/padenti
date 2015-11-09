@@ -19,20 +19,12 @@
 #include "mex.h"
 
 #include <padenti/cl_classifier.hpp>
-
-// Note: so far we support only:
-// - (integral) int images with 4 channels
-// - float features of size 10
-typedef unsigned int ImgType;
-static const int N_CHANNELS = 4;
-typedef float FeatType;
-static const int FEAT_SIZE = 10;
-
+#include "padenti_base.hpp"
 
 // Redefine templates
 // TODO: support for arbitrary template parameters
-typedef Tree<FeatType, FEAT_SIZE, 21> TreeT;
-typedef CLClassifier<ImgType, N_CHANNELS, FeatType, FEAT_SIZE, 21> ClassifierT;
+typedef Tree<FeatType, FEAT_SIZE, N_CLASSES> TreeT;
+typedef CLClassifier<ImgType, N_CHANNELS, FeatType, FEAT_SIZE, N_CLASSES> ClassifierT;
 
 
 void mexFunction(int nlhs, mxArray *plhs[],
@@ -50,7 +42,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
    // Init the classifier
    // TODO: parameterize kernels path
    ClassifierT *classifier =
-     new ClassifierT("/home/daniele/ieiit/varie/test_mscr/kernels", false);
+     new ClassifierT("/home/daniele/ieiit/workspace/padenti/wrappers/matlab", false);
    
 
    // Load Trees

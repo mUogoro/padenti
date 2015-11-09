@@ -16,25 +16,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
-#include "mex.h"
-#include <padenti/cl_classifier.hpp>
-#include "padenti_base.hpp"
+#ifndef __PADENTI_BASE_HPP
+#define __PADENTI_BASE_HPP
 
+// Define the supported image and feature type, for example
+// - (integral) int images with 4 channels
+// - float features of size 10
+// Define the number of classes as well
+//typedef unsigned int ImgType;
+//static const int N_CHANNELS = 4;
+//typedef float FeatType;
+//static const int FEAT_SIZE = 10;
+//static const int N_CLASSES = 21;
 
-typedef CLClassifier<ImgType, N_CHANNELS, FeatType, FEAT_SIZE, N_CLASSES> ClassifierT;
+typedef unsigned int ImgType;
+static const int N_CHANNELS = 10;
+typedef short int FeatType;
+static const int FEAT_SIZE = 10;
+static const int N_CLASSES = 2;
 
-void mexFunction(int nlhs, mxArray *plhs[],
-		 int nrhs, const mxArray *prhs[])
-{
-  // Check argument
-  if (!mxIsUint64(prhs[0]))
-  {
-    mexErrMsgTxt("uint64 argument expected!!!\n");  
-  }
-    
-  ClassifierT *classifierPtr = 
-    reinterpret_cast<ClassifierT*>(*reinterpret_cast<uint64_T*>(mxGetData(prhs[0])));
-  delete classifierPtr;
-  
-  return;
-}
+#endif // __PADENTI_BASE_HPP

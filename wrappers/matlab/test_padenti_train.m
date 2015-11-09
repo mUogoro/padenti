@@ -62,6 +62,9 @@ function [] = test_padenti_train(trainingSetPath, ...
   % Note: images storing is different in matlab (consecutive image
   % channels) w.r.t. OpenCL 4-channel images (consecutive triplets),
   % thus apply permutations to matlab images to store triplets first
+  % when working with N_CHANNELS <=4, otherwise left images unchanged
+  % (Padenti treats images with more than 4 channels as layered images,
+  % the same way as matlab does)
   for n=1:numel(imgFiles)
      
       imgName = imgFiles(n).name;
@@ -77,7 +80,11 @@ function [] = test_padenti_train(trainingSetPath, ...
       intImage(:,:,1) = intImageR(2:end,2:end);
       intImage(:,:,2) = intImageG(2:end,2:end);
       intImage(:,:,3) = intImageB(2:end,2:end);
-      images{1,n} = permute(intImage, [3,1,2]);
+      if N_CHANNELS <= 4
+        images{1,n} = permute(intImage, [3,1,2]);
+      else
+        images{1,n} = intImage;
+      end
       
       prefixSize = size(imgName,2)-size(imagesSuffix,2);
       labelsImgName = strcat(imgName(:,1:prefixSize), labelsSuffix);
@@ -95,7 +102,11 @@ function [] = test_padenti_train(trainingSetPath, ...
               rgbLabels(:,:,3)==RGB2LABEL(l,3);
           perImgLabels(mask) = l;
       end
-      labels{1,n} = permute(perImgLabels, [3,1,2]);
+      if N_CHANNELS<=4
+        labels{1,n} = permute(perImgLabels, [3,1,2]);
+      else
+        labels{1,n} = perImgLabels;
+      end
       
   end
   

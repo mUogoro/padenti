@@ -18,6 +18,7 @@ Features include:
   
 "Padenti" is the word in Sardinian language (in its variant of the Mogoro village) for "Forest".
 
+
 ## Dependencies and installation
 ###Dependencies
 - A GNU Linux system
@@ -37,6 +38,16 @@ mkdir build && cd build
 cmake -DNVIDIA=True ..
 make && make doc && make install
 ```
+
+##Citing
+If you use Padenti in a scientific publication, please cite the following article
+
+Daniele Pianu, Roberto Nerino, Claudia Ferraris, and Antonio Chimienti 
+**A novel approach to train random forests on GPU for computer vision applications using local features**
+*International Journal of High Performance Computing Applications*
+December 29, 2015 doi:10.1177/1094342015622672
+[abstract](http://hpc.sagepub.com/content/early/2015/12/29/1094342015622672.abstract) [bib](http://hpc.sagepub.com/citmgr?type=bibtex&gca=sphpc%3B1094342015622672v1)
+
 
 For more information about library usage and a small tutorial please consult the
 [Doxygen documentation](http://muogoro.github.io/padenti).

@@ -27,8 +27,8 @@
 #include <padenti/cl_tree_trainer.hpp>
 
 
-#define TREE_DEPTH (20)
-#define TRAIN_DEPTH (20)
+#define TREE_DEPTH (5)
+#define TRAIN_DEPTH (5)
 #define N_SAMPLES (2048)
 #define N_FEATURES (2048)
 #define N_THRESHOLDS (20)

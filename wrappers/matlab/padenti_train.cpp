@@ -79,40 +79,42 @@ void mexFunction(int nlhs, mxArray *plhs[],
   mxArray *perLeafSamplesThrField = mxGetField(prhs[0], 0, "perLeafSamplesThr");
   params.perLeafSamplesThr = static_cast<int>(mxGetScalar(perLeafSamplesThrField));
   
-  // TODO: parameterize as well
-  params.perLeafSamplesThr = 100;
   
   mexPrintf("Start training tree up to depth %d\n", depth);
   mexPrintf("Parameters:\n"
-	    "features:              %d\n"
-	    "thresholds:            %d\n"
-	    "features lower bounds: [%f %f %f %f %f %f %f %f %f %f]\n"
-	    "features upper bounds: [%f %f %f %f %f %f %f %f %f %f]\n"
-        "thresholds bound:      [%f, %f]\n",
+	    "samples:                %d\n"
+	    "features:               %d\n"
+	    "thresholds:             %d\n"
+	    //"features lower bounds:  [%d %d %d %d %d %d %d %d %d %d]\n"
+	    //"features upper bounds:  [%d %d %d %d %d %d %d %d %d %d]\n"
+	    "thresholds bound:       [%d, %d]\n"
+	    "number of leaf samples: %d\n",
+	    nSamples,
 	    params.nFeatures,
 	    params.nThresholds,
-	    params.featLowBounds[0],
-	    params.featLowBounds[1],
-	    params.featLowBounds[2],
-	    params.featLowBounds[3],
-	    params.featLowBounds[4],
-	    params.featLowBounds[5],
-	    params.featLowBounds[6],
-	    params.featLowBounds[7],
-	    params.featLowBounds[8],
-	    params.featLowBounds[9],
-	    params.featUpBounds[0],
-	    params.featUpBounds[1],
-	    params.featUpBounds[2],
-	    params.featUpBounds[3],
-	    params.featUpBounds[4],
-	    params.featUpBounds[5],
-	    params.featUpBounds[6],
-	    params.featUpBounds[7],
-	    params.featUpBounds[8],
-	    params.featUpBounds[9],
+	    //params.featLowBounds[0],
+	    //params.featLowBounds[1],
+	    //params.featLowBounds[2],
+	    //params.featLowBounds[3],
+	    //params.featLowBounds[4],
+	    //params.featLowBounds[5],
+	    //params.featLowBounds[6],
+	    //params.featLowBounds[7],
+	    //params.featLowBounds[8],
+	    //params.featLowBounds[9],
+	    //params.featUpBounds[0],
+	    //params.featUpBounds[1],
+	    //params.featUpBounds[2],
+	    //params.featUpBounds[3],
+	    //params.featUpBounds[4],
+	    //params.featUpBounds[5],
+	    //params.featUpBounds[6],
+	    //params.featUpBounds[7],
+	    //params.featUpBounds[8],
+	    //params.featUpBounds[9],
 	    params.thrLowBound,
-	    params.thrUpBound);
+	    params.thrUpBound,
+	    params.perLeafSamplesThr);
 
   // Get number of classes
   int nClasses = static_cast<int>(mxGetScalar(prhs[3]));
@@ -134,6 +136,12 @@ void mexFunction(int nlhs, mxArray *plhs[],
   }
   int nImages = dimImgCell[1];
   
+  // Check if we have to apply "single-pixel" trick
+  bool singlePixel = false;
+  if (nrhs==5 && mxIsLogical(prhs[4]))
+  {
+    singlePixel = *mxGetLogicals(prhs[4]);
+  }
   
   // Initialize the trainer
   // TODO: parameterize feature computation kernel path
@@ -157,24 +165,24 @@ void mexFunction(int nlhs, mxArray *plhs[],
       mwIndex imgCell[2];
       imgCell[0]=0; imgCell[1]=i;
       mxArray *imgArray = 
-	mxGetCell(prhs[1], mxCalcSingleSubscript(prhs[1], 2, imgCell));
+	  mxGetCell(prhs[1], mxCalcSingleSubscript(prhs[1], 2, imgCell));
     
       // - get the current labels array
       mwIndex labelsCell[2];
       labelsCell[0]=0; labelsCell[1]=i;
       mxArray *labelsArray = 
-	mxGetCell(prhs[2], mxCalcSingleSubscript(prhs[2], 2, labelsCell));
+	  mxGetCell(prhs[2], mxCalcSingleSubscript(prhs[2], 2, labelsCell));
     
       // - check the type of images and labels
       if (!mxIsUint32(imgArray))
       {
-	mexPrintf("Image %d is not of type uint32, skip\n", i+1);
-	continue;
+	    mexPrintf("Image %d is not of type uint32, skip\n", i+1);
+	    continue;
       }
       if (!mxIsUint8(labelsArray))
       {
-	mexPrintf("Image %d is not of type uint8, skip\n", i+1);
-	continue;
+	    mexPrintf("Image %d is not of type uint8, skip\n", i+1);
+	    continue;
       }
   
       // - get number of channels
@@ -224,12 +232,23 @@ void mexFunction(int nlhs, mxArray *plhs[],
       int clWidth = imgHeight;
       int clHeight = imgWidth;
     
-      // Apply uniform sampling
-      perImgNSamples = sampler.sample(imgData, lblData,
-				      clWidth, clHeight, perImgSamples);
+      if (!singlePixel)
+      {
+        // Apply uniform sampling
+        perImgNSamples = sampler.sample(imgData, lblData,
+		    		      clWidth, clHeight, perImgSamples);
+      }
+      else
+      {
+        // Single pixel trick: work only on the upper-left corner
+        // pixel.
+        perImgNSamples = 1;
+	perImgSamples[0] = 0;
+        //std::fill(perImgSamples, perImgSamples+4, 0);
+      }
       trainingSet << TrainingSetImageT(imgData, clWidth, clHeight,
 				       lblData, nClasses,
-				       perImgSamples, perImgNSamples);
+                                       perImgSamples, perImgNSamples);
       delete []perImgSamples;
     }
   

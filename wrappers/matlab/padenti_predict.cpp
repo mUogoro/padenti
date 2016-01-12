@@ -25,6 +25,7 @@
 // Redefine templates
 // TODO: support for arbitrary template parameters
 typedef Image<ImgType, N_CHANNELS> ImageT;
+typedef Image<unsigned char, 1> MaskT;
 typedef Tree<FeatType, FEAT_SIZE, N_CLASSES> TreeT;
 typedef CLClassifier<ImgType, N_CHANNELS, FeatType, FEAT_SIZE, N_CLASSES> ClassifierT;
 typedef Image<float, N_CLASSES> PredictionT;
@@ -42,6 +43,16 @@ void mexFunction(int nlhs, mxArray *plhs[],
     mexErrMsgTxt("uint32 array expected as second argument!!!\n");  
   }
   
+  bool useMask = false;
+  if (nrhs==3)
+  {
+    if  (!mxIsUint8(prhs[2]))
+    {
+      mexErrMsgTxt("uint8 array expected as second argument!!!\n");
+    }
+    useMask = true;
+  }
+  
   // Check input image format
   mwSize nDimImage = mxGetNumberOfDimensions(prhs[1]);
   const mwSize *dimImage = mxGetDimensions(prhs[1]);
@@ -52,6 +63,17 @@ void mexFunction(int nlhs, mxArray *plhs[],
     mexErrMsgTxt("Input image must have at least 4 channels!!!\n");  
   }
   
+  if (useMask)
+  {
+    mwSize nDimMask = mxGetNumberOfDimensions(prhs[2]);
+    const mwSize *dimMask = mxGetDimensions(prhs[2]);
+    if (nDimMask!=2 || dimMask[0]!=dimImage[0] || dimMask[1]!=dimImage[1])
+    {
+      mexErrMsgTxt("Input mask must have 2 channels and the same dimension"
+                   " of the input image!!!\n");  
+    }
+  }
+    
   // Create the Padenti images used for storing the input image and the
   // prediction result
   // Note: due to the different storage mode of Matlab (column major)
@@ -72,7 +94,16 @@ void mexFunction(int nlhs, mxArray *plhs[],
     reinterpret_cast<ClassifierT*>(*reinterpret_cast<uint64_T*>(mxGetData(prhs[0])));
   
   // Perform prediction
-  classifierPtr->predict(image, prediction);
+  if (useMask)
+  {
+    MaskT mask(reinterpret_cast<unsigned char*>(mxGetData(prhs[2])),
+               clWidth, clHeight);
+    classifierPtr->predict(image, prediction, mask);
+  }
+  else
+  {
+    classifierPtr->predict(image, prediction);
+  }
   
   // Save prediction result into Matlab array
   mwSize outDim[3];

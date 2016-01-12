@@ -23,6 +23,7 @@
 // - (integral) int images with 4 channels
 // - float features of size 10
 // Define the number of classes as well
+
 //typedef unsigned int ImgType;
 //static const int N_CHANNELS = 4;
 //typedef float FeatType;
@@ -32,7 +33,9 @@
 typedef unsigned int ImgType;
 static const int N_CHANNELS = 10;
 typedef short int FeatType;
-static const int FEAT_SIZE = 10;
+//static const int FEAT_SIZE = 10;
+//static const int FEAT_SIZE = 5;
+static const int FEAT_SIZE = 6;
 static const int N_CLASSES = 2;
 
 #endif // __PADENTI_BASE_HPP

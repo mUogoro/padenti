@@ -109,6 +109,7 @@ private:
   void _learnBestFeatThr(Tree<FeatType, FeatDim, nClasses> &tree,
 			 const TreeTrainerParameters<FeatType, FeatDim> &params,
 			 unsigned int currDepth, unsigned int currSlice);
+  void _cleanTrain();
 
 public:
   CLTreeTrainer(const std::string &featureKernelPath, bool useCPU);

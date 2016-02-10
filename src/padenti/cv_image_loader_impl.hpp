@@ -193,7 +193,6 @@ CVRGBLabelsROILoader::CVRGBLabelsROILoader(const unsigned char (*rgb2labelMap)[3
   CVRGBLabelsLoader(rgb2labelMap, nClasses){}
 
 
-/** \todo rewrite to take advantage of _extractROI helper function */
 void CVRGBLabelsROILoader::load(const std::string &imagePath, unsigned char *data,
 				unsigned int *width, unsigned int *height
 )
@@ -201,23 +200,16 @@ void CVRGBLabelsROILoader::load(const std::string &imagePath, unsigned char *dat
   CVRGBLabelsLoader::load(imagePath, data, width, height);
 
   cv::Mat tmp(*height, *width, CV_8UC1, (void*)data);
-  std::vector<std::vector<cv::Point> > contours;
-  std::vector<cv::Vec4i> hierarchy;
-  cv::Rect boundRect;
-
-  cv::Mat mask = tmp>0;
-  cv::findContours(mask, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-  boundRect = cv::boundingRect(contours[0]);
+  cv::Rect boundRect = _extractROI(tmp);
 
   cv::Mat out(boundRect.height, boundRect.width, CV_8UC1, (void*)data);
   cv::Mat roi = tmp(boundRect).clone();
+  roi.copyTo(out);
 
   *width = boundRect.width;
   *height = boundRect.height;
   m_roiX=boundRect.x;
   m_roiY=boundRect.y;
-
-  roi.copyTo(out);
 }
 
 
@@ -284,7 +276,17 @@ cv::Rect _extractROI(const cv::Mat &img)
 
    cv::Mat mask = img>0;
    cv::findContours(mask, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+   // Return the bounding rect associated with the counter with the bigger area
    boundRect = cv::boundingRect(contours[0]);
+   for (int i=1; i<contours.size(); i++)
+   {
+     cv::Rect currBoundRect = cv::boundingRect(contours[i]);
+     if (currBoundRect.width*currBoundRect.height > boundRect.width*boundRect.height)
+     {
+       boundRect = currBoundRect;
+     }
+   }
    
    return boundRect;
 }

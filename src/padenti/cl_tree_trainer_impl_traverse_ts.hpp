@@ -21,10 +21,8 @@
 #include <queue>
 #include <pthread.h>
 #include <boost/chrono/chrono.hpp>
-//#include <boost/log/trivial.hpp>
+#include <boost/log/trivial.hpp>
 #include <emmintrin.h>
-//#include <nmmintrin.h>
-//#include <immintrin.h>
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -435,7 +433,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
   // DONE with local histograms
   pthread_join(consumer, NULL);
 
-  /*
+  
   double totTime = static_cast<double>(totWriteTime)*1.e-9;
   BOOST_LOG_TRIVIAL(info) << "Total local histogram write time: "
 			  << totTime
@@ -454,7 +452,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
 			  << " seconds";
                           // << (avg: " << totTime/tsImages.size()
 			  //<< " seconds)";
-  */
+  
 }
 
 
@@ -538,6 +536,7 @@ void *_updateGlobalHistogram(void *_data)
 
       // SSE2 optimized version
       // \todo Check for SSE2 availability
+      /*
       __m128i globalCounter;
       __m128i localCounter;
       for (unsigned int t=0; t<params.nThresholds; t++)
@@ -545,14 +544,138 @@ void *_updateGlobalHistogram(void *_data)
 	for (unsigned int f=0; f<params.nFeatures; f+=4, globalPtr+=4, localPtr+=4)
 	{
 	  globalCounter = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr));
-	  localCounter = _mm_set_epi32(static_cast<int>(localPtr[3]),
-				       static_cast<int>(localPtr[2]),
-				       static_cast<int>(localPtr[1]),
-				       static_cast<int>(localPtr[0]));
+	  
+	  //localCounter = _mm_set_epi32(static_cast<int>(localPtr[3]),
+	  //			       static_cast<int>(localPtr[2]),
+	  //			       static_cast<int>(localPtr[1]),
+	  //			       static_cast<int>(localPtr[0]));
+
+	  localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  localCounter = _mm_unpacklo_epi8(localCounter, _mm_setzero_si128());
+	  localCounter = _mm_unpacklo_epi16(localCounter, _mm_setzero_si128());
+
+	  //localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  //localCounter = _mm_unpacklo_epi8(localCounter, localCounter);
+	  //localCounter = _mm_unpacklo_epi16(localCounter, localCounter);
+	  //localCounter = _mm_srai_epi32(localCounter, 24);
+
 	  globalCounter = _mm_add_epi32(globalCounter, localCounter);
 	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
+	  //_mm_stream_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
 	}
       }
+      */
+
+      
+      for (unsigned int t=0; t<params.nThresholds; t++)
+      {
+	for (unsigned int f=0; f<params.nFeatures; f+=16, globalPtr+=16, localPtr+=16)
+	{
+	  __m128i globalCounter1, globalCounter2, globalCounter3, globalCounter4;
+	  __m128i localCounter1, localCounter2, localCounter3, localCounter4;
+	  
+	  globalCounter1 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr));
+	  globalCounter2 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr+4));
+	  globalCounter3 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr+8));
+	  globalCounter4 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr+12));
+	  
+	  localCounter1 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  localCounter2 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr+4));
+	  localCounter3 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr+8));
+	  localCounter4 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr+12));
+
+
+	  localCounter1 = _mm_unpacklo_epi8(localCounter1, _mm_setzero_si128());
+	  localCounter1 = _mm_unpacklo_epi16(localCounter1, _mm_setzero_si128());
+
+	  localCounter2 = _mm_unpacklo_epi8(localCounter2, _mm_setzero_si128());
+	  localCounter2 = _mm_unpacklo_epi16(localCounter2, _mm_setzero_si128());
+
+	  localCounter3 = _mm_unpacklo_epi8(localCounter3, _mm_setzero_si128());
+	  localCounter3 = _mm_unpacklo_epi16(localCounter3, _mm_setzero_si128());
+
+	  localCounter4 = _mm_unpacklo_epi8(localCounter4, _mm_setzero_si128());
+	  localCounter4 = _mm_unpacklo_epi16(localCounter4, _mm_setzero_si128());
+
+
+	  //localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  //localCounter = _mm_unpacklo_epi8(localCounter, localCounter);
+	  //localCounter = _mm_unpacklo_epi16(localCounter, localCounter);
+	  //localCounter = _mm_srai_epi32(localCounter, 24);
+
+	  globalCounter1 = _mm_add_epi32(globalCounter1, localCounter1);
+	  globalCounter2 = _mm_add_epi32(globalCounter2, localCounter2);
+	  globalCounter3 = _mm_add_epi32(globalCounter3, localCounter3);
+	  globalCounter4 = _mm_add_epi32(globalCounter4, localCounter4);
+
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter1);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr+4), globalCounter2);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr+8), globalCounter3);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr+12), globalCounter4);
+	  //_mm_stream_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
+	}
+      }
+      
+
+      /** \todo how to further improve throughput using OpenMP? */
+      /*
+      #pragma omp parallel for schedule(static,1) num_threads(4)
+      for (unsigned int t=0; t<params.nThresholds; t++)
+      {
+	//unsigned int *pvtGlobalPtr = globalPtr + t*params.nFeatures; 
+	//unsigned char *pvtLocalPtr = localPtr + t*params.nFeatures;
+
+	//for (unsigned int f=0; f<params.nFeatures; f+=16, pvtGlobalPtr+=16, pvtLocalPtr+=16)
+	for (unsigned int f=0; f<params.nFeatures; f+=16)
+	{
+	  __m128i globalCounter1, globalCounter2, globalCounter3, globalCounter4;
+	  __m128i localCounter1, localCounter2, localCounter3, localCounter4;
+	  
+	  unsigned int *pvtGlobalPtr = globalPtr + t*params.nFeatures + f; 
+	  unsigned char *pvtLocalPtr = localPtr + t*params.nFeatures + f;
+
+	  globalCounter1 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr));
+	  globalCounter2 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+4));
+	  globalCounter3 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+8));
+	  globalCounter4 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+12));
+	  
+	  localCounter1 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr));
+	  localCounter2 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr+4));
+	  localCounter3 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr+8));
+	  localCounter4 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr+12));
+
+
+	  localCounter1 = _mm_unpacklo_epi8(localCounter1, _mm_setzero_si128());
+	  localCounter1 = _mm_unpacklo_epi16(localCounter1, _mm_setzero_si128());
+
+	  localCounter2 = _mm_unpacklo_epi8(localCounter2, _mm_setzero_si128());
+	  localCounter2 = _mm_unpacklo_epi16(localCounter2, _mm_setzero_si128());
+
+	  localCounter3 = _mm_unpacklo_epi8(localCounter3, _mm_setzero_si128());
+	  localCounter3 = _mm_unpacklo_epi16(localCounter3, _mm_setzero_si128());
+
+	  localCounter4 = _mm_unpacklo_epi8(localCounter4, _mm_setzero_si128());
+	  localCounter4 = _mm_unpacklo_epi16(localCounter4, _mm_setzero_si128());
+
+
+	  //localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  //localCounter = _mm_unpacklo_epi8(localCounter, localCounter);
+	  //localCounter = _mm_unpacklo_epi16(localCounter, localCounter);
+	  //localCounter = _mm_srai_epi32(localCounter, 24);
+
+	  globalCounter1 = _mm_add_epi32(globalCounter1, localCounter1);
+	  globalCounter2 = _mm_add_epi32(globalCounter2, localCounter2);
+	  globalCounter3 = _mm_add_epi32(globalCounter3, localCounter3);
+	  globalCounter4 = _mm_add_epi32(globalCounter4, localCounter4);
+
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr), globalCounter1);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+4), globalCounter2);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+8), globalCounter3);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+12), globalCounter4);
+	  //_mm_stream_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
+	}
+      }
+      */
       
       toSkipImg = false;
     }
@@ -572,9 +695,9 @@ void *_updateGlobalHistogram(void *_data)
 
   boost::chrono::duration<double> totGlobHistUpdateSeconds = 
     boost::chrono::duration_cast<boost::chrono::duration<double> >(totGlobHistUpdateTime);
-  /*
+  
   BOOST_LOG_TRIVIAL(info) << "Total global histogram update time: " << totGlobHistUpdateSeconds.count()
-			  << " seconds (avg: " << totGlobHistUpdateSeconds.count()/tsImages.size()
+                          //<< " seconds (avg: " << totGlobHistUpdateSeconds.count()/tsImages.size()
 			  << " seconds)";
-  */
+  
 }

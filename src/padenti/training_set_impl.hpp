@@ -20,6 +20,7 @@
 #include <vector>
 #include <utility>
 #include <boost/filesystem.hpp>
+#include <boost/log/trivial.hpp>
 #include <padenti/training_set.hpp>
 
 using namespace boost::filesystem;
@@ -93,8 +94,14 @@ TrainingSet<type, nChannels>::TrainingSet(const std::string &tsPathStr,
     dataLoader.load(imgFName, imgBuff, &imgWidth, &imgHeight);
     labelsLoader.load(labelsFName, labelsBuff, &labelsWidth, &labelsHeight);
 
-    /** \todo log skipped samples? */
-    if (imgWidth!=labelsWidth || imgHeight!=labelsHeight) continue;
+    if (imgWidth!=labelsWidth || imgHeight!=labelsHeight)
+    {
+      BOOST_LOG_TRIVIAL(warning) << "Skip image pair " << imgFName << " - " << labelsFName
+				 << " due to different size ("
+				 << imgWidth << "X" << imgHeight << ", "
+				 << labelsWidth << "X" << labelsHeight << ")";
+      continue;
+    }
 
     nSamples = sampler.sample(imgBuff, labelsBuff, imgWidth, imgHeight,
 			      samplesBuff);

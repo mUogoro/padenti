@@ -93,13 +93,13 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLClassifier(
   m_clComputePosteriorKern = cl::Kernel(m_clPredictProg, "computePosterior");
 
   // Init OpenCL image objects used for prediction
-  // Note: use a large image size at beginning (e.g. 4096x4096). If a wider image
-  // must be processed, resize all buffer
+  // Note: use an image size of 640x480 at beginning. If a wider image
+  // must be processed, resize all buffers.
   // Note: using a large buffer allows work-items to access outside real image bounds
   // during kernel computation. This must be prevented in some way...
   // Note: we used pinned-memory trick for images/buffers that are read/written by the host
-  m_internalImgWidth = 2048;
-  m_internalImgHeight = 2048;
+  m_internalImgWidth = 640;
+  m_internalImgHeight = 480;
   _initImgObjects(m_internalImgWidth, m_internalImgHeight, false);
 
   // Done

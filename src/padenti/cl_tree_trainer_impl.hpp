@@ -26,7 +26,7 @@
 #include <iterator>
 #include <utility>
 #include <boost/chrono/chrono.hpp>
-//#include <boost/log/trivial.hpp>
+#include <boost/log/trivial.hpp>
 #include <padenti/cl_tree_trainer.hpp>
 #include <padenti/cl_img_fmt_traits.hpp>
 #include <padenti/cl_feat_fmt_traits.hpp>
@@ -44,7 +44,7 @@
 // Note: maximum allowed global (i.e. per-depth) histogram size, currently set to 8GB (2^30 unsigned int)
 /** \todo parameterize, e.g. using a documented "internal parameters" argument */
 //#define GLOBAL_HISTOGRAM_MAX_SIZE (24lu*(2<<29))
-#define GLOBAL_HISTOGRAM_MAX_SIZE (20lu*(2<<29))
+#define GLOBAL_HISTOGRAM_MAX_SIZE (18lu*(2<<29))
 
 /** \todo "automagically" compute this value or parameterize it */
 #define PER_THREAD_FEAT_THR_PAIRS (64)
@@ -201,13 +201,13 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::train(
     unsigned int frontierSize = _initFrontier(tree, params, currDepth);
     unsigned int nSlices = _initHistogram(params);
 
-    /*
+    
     if (nSlices>1)
     {
       BOOST_LOG_TRIVIAL(info) << "Maximum allowed global histogram size reached: split in "
 			      << nSlices << " slices";
     }
-    */
+    
 
     // Flag all images as to-be-skipped: the flag will be set to false if at least one
     // image pixel is processed
@@ -226,10 +226,10 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::train(
     boost::chrono::duration<double> perLevelTrainTime =
       boost::chrono::duration_cast<boost::chrono::duration<double> >(boost::chrono::steady_clock::now() - 
 								   perLevelTrainStart);
-    /*
+    
     BOOST_LOG_TRIVIAL(info) << "Depth " << currDepth << " trained in "
 			    << perLevelTrainTime.count() << " seconds";
-    */
+    
   }
 
   _cleanTrain();

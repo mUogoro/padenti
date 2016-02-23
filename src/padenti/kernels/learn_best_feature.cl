@@ -91,7 +91,7 @@ __kernel void learnBestFeature(__global unsigned int *histogram,
       hR -= (tmp<=EPS) ? 0.0f : tmp*log2(tmp);
     }
     tmp = h - ((float)nL/(nL+nR)*hL + (float)nR/(nL+nR)*hR); // Final information gain
-    tmp = 2.0*tmp/(h+hL+hR); // Final normalized information gain
+    //tmp = 2.0*tmp/(h+hL+hR); // Final normalized information gain
 
     if (!i || tmp>currBestEntropy)
     {

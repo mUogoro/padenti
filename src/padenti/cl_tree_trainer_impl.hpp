@@ -44,7 +44,7 @@
 // Note: maximum allowed global (i.e. per-depth) histogram size, currently set to 8GB (2^30 unsigned int)
 /** \todo parameterize, e.g. using a documented "internal parameters" argument */
 //#define GLOBAL_HISTOGRAM_MAX_SIZE (24lu*(2<<29))
-#define GLOBAL_HISTOGRAM_MAX_SIZE (18lu*(2<<29))
+#define GLOBAL_HISTOGRAM_MAX_SIZE (20lu*(2<<29))
 
 /** \todo "automagically" compute this value or parameterize it */
 #define PER_THREAD_FEAT_THR_PAIRS (64)

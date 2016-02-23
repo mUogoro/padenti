@@ -30,6 +30,8 @@
 #define WG_WIDTH (16)
 #define WG_HEIGHT (16)
 
+#define INIT_WIDTH (320)
+#define INIT_HEIGHT (240)
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -93,13 +95,13 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLClassifier(
   m_clComputePosteriorKern = cl::Kernel(m_clPredictProg, "computePosterior");
 
   // Init OpenCL image objects used for prediction
-  // Note: use an image size of 640x480 at beginning. If a wider image
+  // Note: use an image size of INIT_WIDTH X INIT_HEIGHT at beginning. If a wider image
   // must be processed, resize all buffers.
   // Note: using a large buffer allows work-items to access outside real image bounds
   // during kernel computation. This must be prevented in some way...
   // Note: we used pinned-memory trick for images/buffers that are read/written by the host
-  m_internalImgWidth = 640;
-  m_internalImgHeight = 480;
+  m_internalImgWidth = INIT_WIDTH;
+  m_internalImgHeight = INIT_HEIGHT;
   _initImgObjects(m_internalImgWidth, m_internalImgHeight, false);
 
   // Done
@@ -128,6 +130,7 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::operator<<(
   unsigned int treeDepth = tree.getDepth();
   unsigned int nNodes = (2<<(treeDepth-1))-1;
 
+  
   m_clTreeLeftChildBuff.push_back(cl::Buffer(m_clContext,
 					     CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
 					     nNodes*sizeof(cl_uint),
@@ -144,6 +147,28 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::operator<<(
 					      CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
 					      nNodes*sizeof(cl_float)*nClasses,
 					      (void*)tree.getPosteriors()));
+  
+
+  /*
+  m_clTreeLeftChildBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					     nNodes*sizeof(cl_uint)));
+  m_clTreeFeaturesBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					    nNodes*sizeof(FeatType)*FeatDim));
+  m_clTreeThrsBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					nNodes*sizeof(FeatType)));
+  m_clTreePosteriorsBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					      nNodes*sizeof(cl_float)*nClasses));
+
+  m_clQueue.enqueueWriteBuffer(m_clTreeLeftChildBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(cl_uint), (void*)tree.getLeftChildren());
+  m_clQueue.enqueueWriteBuffer(m_clTreeFeaturesBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(FeatType)*FeatDim, (void*)tree.getFeatures());
+  m_clQueue.enqueueWriteBuffer(m_clTreeThrsBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(FeatType), (void*)tree.getThresholds());
+  m_clQueue.enqueueWriteBuffer(m_clTreePosteriorsBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(cl_float)*nClasses, (void*)tree.getPosteriors());
+  */
+
   m_treeDepth.push_back(tree.getDepth());
   m_nTrees++;
 

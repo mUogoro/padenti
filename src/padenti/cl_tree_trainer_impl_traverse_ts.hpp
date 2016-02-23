@@ -23,8 +23,6 @@
 #include <boost/chrono/chrono.hpp>
 #include <boost/log/trivial.hpp>
 #include <emmintrin.h>
-//#include <nmmintrin.h>
-//#include <immintrin.h>
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -139,8 +137,10 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
     if (!m_skippedTsImg[imgID])
     {
     // ************ FIRST QUEUE: WRITE AND KERNELS LAUNCH *************/
-    fillWidth = (currImage.getWidth()%WG_WIDTH) ? WG_WIDTH-(currImage.getWidth()%WG_WIDTH) : 0;
-    fillHeight = (currImage.getHeight()%WG_HEIGHT) ? WG_HEIGHT-(currImage.getHeight()%WG_HEIGHT) : 0;
+    fillWidth = (currImage.getWidth()%WG_PREDICT_WIDTH) ? 
+      WG_PREDICT_WIDTH-(currImage.getWidth()%WG_PREDICT_WIDTH) : 0;
+    fillHeight = (currImage.getHeight()%WG_PREDICT_HEIGHT) ?
+      WG_PREDICT_HEIGHT-(currImage.getHeight()%WG_PREDICT_HEIGHT) : 0;
     region[0]=m_maxTsImgWidth; region[1]=m_maxTsImgHeight; region[2]=1;
 
     // TODO: check if its faster to perform bound-check on coordinates and erase only
@@ -232,7 +232,8 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
 					cl::NullRange,
 					cl::NDRange(currImage.getWidth()+fillWidth,
 						    currImage.getHeight()+fillHeight),
-					cl::NDRange(WG_WIDTH, WG_HEIGHT),
+					//cl::NDRange(WG_WIDTH, WG_HEIGHT),
+					cl::NDRange(WG_PREDICT_WIDTH, WG_PREDICT_HEIGHT),
 					NULL,
 					(d==0) ? ((imgID%2) ? &startComputeEvent2 :
                                                               &startComputeEvent1) : NULL);
@@ -267,7 +268,8 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
     weCLQueue->enqueueNDRangeKernel(m_clPerImgHistKern,
 				    cl::NullRange,
 				    cl::NDRange(currImage.getNSamples(), params.nFeatures),
-				    cl::NDRange(WG_WIDTH, WG_HEIGHT),
+				    //cl::NDRange(WG_WIDTH, WG_HEIGHT),
+				    cl::NDRange(WG_LHIST_UPDATE_HEIGHT, WG_LHIST_UPDATE_WIDTH),
 				    NULL, (imgID%2) ? &endComputeEvent2 : &endComputeEvent1);
     }
 
@@ -275,14 +277,17 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
     if (it!=tsImages.begin() && !m_skippedTsImg[imgID-1])
     {
       const TrainingSetImage<ImgType, nChannels> &prevImage = *(it-1);
-      fillWidth = (prevImage.getWidth()%WG_WIDTH) ? WG_WIDTH-(prevImage.getWidth()%WG_WIDTH) : 0;
-      fillHeight = (prevImage.getHeight()%WG_HEIGHT) ? WG_HEIGHT-(prevImage.getHeight()%WG_HEIGHT) : 0;
+      fillWidth = (prevImage.getWidth()%WG_PREDICT_WIDTH) ?
+	WG_PREDICT_WIDTH-(prevImage.getWidth()%WG_PREDICT_WIDTH) : 0;
+      fillHeight = (prevImage.getHeight()%WG_PREDICT_HEIGHT) ?
+	WG_PREDICT_HEIGHT-(prevImage.getHeight()%WG_PREDICT_HEIGHT) : 0;
       region[0]=prevImage.getWidth(); region[1]=prevImage.getHeight();
 
       // Producer
       // Check if the queue is full
       pthread_mutex_lock(&fifoMtx);
-      if (fifoQueue.size()==GLOBAL_HISTOGRAM_FIFO_SIZE)
+      //if (fifoQueue.size()==GLOBAL_HISTOGRAM_FIFO_SIZE)
+      while (fifoQueue.size()==GLOBAL_HISTOGRAM_FIFO_SIZE)
       {
 	//std::cout << "P: queue full, wait ..."<< std::endl;
 	pthread_cond_wait(&fifoCond, &fifoMtx);
@@ -292,8 +297,6 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
 
       if (currDepth==1 && it==tsImages.begin())
       {
-	//std::fill_n(m_clTsNodesIDImgPinnPtr+queueIdx*m_maxTsImgWidth*m_maxTsImgHeight,
-	//	    m_maxTsImgWidth*m_maxTsImgHeight, 0);
 	std::fill_n(m_clTsNodesIDImgPinnPtr,
 		    GLOBAL_HISTOGRAM_FIFO_SIZE*m_maxTsImgWidth*m_maxTsImgHeight, 0);
       }
@@ -361,13 +364,15 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
     const TrainingSetImage<ImgType, nChannels> &currImage = *(tsImages.end()-1);
     cl::CommandQueue *rCLQueue = (imgID%2) ? &m_clQueue2 : &m_clQueue1;
 
-    fillWidth = (currImage.getWidth()%WG_WIDTH) ? WG_WIDTH-(currImage.getWidth()%WG_WIDTH) : 0;
-    fillHeight = (currImage.getHeight()%WG_HEIGHT) ? WG_HEIGHT-(currImage.getHeight()%WG_HEIGHT) : 0;
+    fillWidth = (currImage.getWidth()%WG_PREDICT_WIDTH) ?
+      WG_PREDICT_WIDTH-(currImage.getWidth()%WG_PREDICT_WIDTH) : 0;
+    fillHeight = (currImage.getHeight()%WG_PREDICT_HEIGHT) ?
+      WG_PREDICT_HEIGHT-(currImage.getHeight()%WG_PREDICT_HEIGHT) : 0;
     region[0]=currImage.getWidth(); region[1]=currImage.getHeight();
 
 
     pthread_mutex_lock(&fifoMtx);
-    if (fifoQueue.size()==GLOBAL_HISTOGRAM_FIFO_SIZE)
+    while (fifoQueue.size()==GLOBAL_HISTOGRAM_FIFO_SIZE)
     {
       //std::cout << "P: queue full, wait ..."<< std::endl;
       pthread_cond_wait(&fifoCond, &fifoMtx);
@@ -428,7 +433,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
   // DONE with local histograms
   pthread_join(consumer, NULL);
 
-
+  
   double totTime = static_cast<double>(totWriteTime)*1.e-9;
   BOOST_LOG_TRIVIAL(info) << "Total local histogram write time: "
 			  << totTime
@@ -494,7 +499,7 @@ void *_updateGlobalHistogram(void *_data)
 
     // Lock the queue and check if it's empty
     pthread_mutex_lock(&fifoMtx);
-    if (fifoQueue.size()==0)
+    while (fifoQueue.size()==0)
     {
       //std::cout << "C: queue empty ..." << std::endl;
       pthread_cond_wait(&fifoCond, &fifoMtx);
@@ -529,18 +534,9 @@ void *_updateGlobalHistogram(void *_data)
       unsigned int *globalPtr = &histogram[frontierIdxMap->at(nodeID)-frontierOffset][globalOffset];
       unsigned char *localPtr = &perImgHistogram[perImgOffset];
 
-      
-      //for (unsigned int t=0; t<params.nThresholds; t++)
-      //{
-      //  for (unsigned int f=0; f<params.nFeatures; f++, globalPtr++, localPtr++)
-      //  {
-      //    *globalPtr += static_cast<unsigned int>(*localPtr);
-      //    assert(!nodeID || *globalPtr<=(perClassTotSamples[nodeID*nClasses+label]));
-      //  }
-      //}
-
       // SSE2 optimized version
       // \todo Check for SSE2 availability
+      /*
       __m128i globalCounter;
       __m128i localCounter;
       for (unsigned int t=0; t<params.nThresholds; t++)
@@ -548,95 +544,144 @@ void *_updateGlobalHistogram(void *_data)
 	for (unsigned int f=0; f<params.nFeatures; f+=4, globalPtr+=4, localPtr+=4)
 	{
 	  globalCounter = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr));
-	  localCounter = _mm_set_epi32(static_cast<int>(localPtr[3]),
-				       static_cast<int>(localPtr[2]),
-				       static_cast<int>(localPtr[1]),
-				       static_cast<int>(localPtr[0]));
+	  
+	  //localCounter = _mm_set_epi32(static_cast<int>(localPtr[3]),
+	  //			       static_cast<int>(localPtr[2]),
+	  //			       static_cast<int>(localPtr[1]),
+	  //			       static_cast<int>(localPtr[0]));
+
+	  localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  localCounter = _mm_unpacklo_epi8(localCounter, _mm_setzero_si128());
+	  localCounter = _mm_unpacklo_epi16(localCounter, _mm_setzero_si128());
+
+	  //localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  //localCounter = _mm_unpacklo_epi8(localCounter, localCounter);
+	  //localCounter = _mm_unpacklo_epi16(localCounter, localCounter);
+	  //localCounter = _mm_srai_epi32(localCounter, 24);
+
 	  globalCounter = _mm_add_epi32(globalCounter, localCounter);
 	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
-	}
-      }
-      
-      // AVX2 optimized version
-      // \todo enable if AVX2 is supported
-      /*
-      __m256i globalCounter;
-      __m256i localCounter;
-      for (unsigned int t=0; t<params.nThresholds; t++)
-      {
-	for (unsigned int f=0; f<params.nFeatures; f+=16, globalPtr+=16, localPtr+=16)
-	{
-	  globalCounter = _mm256_loadu_si256(reinterpret_cast<__m256i*>(globalPtr));
-	  localCounter = _mm256_set_epi32(static_cast<int>(localPtr[7]),
-					  static_cast<int>(localPtr[6]),
-					  static_cast<int>(localPtr[5]),
-					  static_cast<int>(localPtr[4]),
-					  static_cast<int>(localPtr[3]),
-					  static_cast<int>(localPtr[2]),
-					  static_cast<int>(localPtr[1]),
-					  static_cast<int>(localPtr[0]));
-	  globalCounter = _mm256_add_epi32(globalCounter, localCounter);
-	  _mm256_storeu_si256(reinterpret_cast<__m256i*>(globalPtr), globalCounter);
+	  //_mm_stream_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
 	}
       }
       */
 
+      
+      for (unsigned int t=0; t<params.nThresholds; t++)
+      {
+	for (unsigned int f=0; f<params.nFeatures; f+=16, globalPtr+=16, localPtr+=16)
+	{
+	  __m128i globalCounter1, globalCounter2, globalCounter3, globalCounter4;
+	  __m128i localCounter1, localCounter2, localCounter3, localCounter4;
+	  
+	  globalCounter1 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr));
+	  globalCounter2 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr+4));
+	  globalCounter3 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr+8));
+	  globalCounter4 = _mm_loadu_si128(reinterpret_cast<__m128i*>(globalPtr+12));
+	  
+	  localCounter1 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  localCounter2 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr+4));
+	  localCounter3 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr+8));
+	  localCounter4 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr+12));
+
+
+	  localCounter1 = _mm_unpacklo_epi8(localCounter1, _mm_setzero_si128());
+	  localCounter1 = _mm_unpacklo_epi16(localCounter1, _mm_setzero_si128());
+
+	  localCounter2 = _mm_unpacklo_epi8(localCounter2, _mm_setzero_si128());
+	  localCounter2 = _mm_unpacklo_epi16(localCounter2, _mm_setzero_si128());
+
+	  localCounter3 = _mm_unpacklo_epi8(localCounter3, _mm_setzero_si128());
+	  localCounter3 = _mm_unpacklo_epi16(localCounter3, _mm_setzero_si128());
+
+	  localCounter4 = _mm_unpacklo_epi8(localCounter4, _mm_setzero_si128());
+	  localCounter4 = _mm_unpacklo_epi16(localCounter4, _mm_setzero_si128());
+
+
+	  //localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  //localCounter = _mm_unpacklo_epi8(localCounter, localCounter);
+	  //localCounter = _mm_unpacklo_epi16(localCounter, localCounter);
+	  //localCounter = _mm_srai_epi32(localCounter, 24);
+
+	  globalCounter1 = _mm_add_epi32(globalCounter1, localCounter1);
+	  globalCounter2 = _mm_add_epi32(globalCounter2, localCounter2);
+	  globalCounter3 = _mm_add_epi32(globalCounter3, localCounter3);
+	  globalCounter4 = _mm_add_epi32(globalCounter4, localCounter4);
+
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter1);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr+4), globalCounter2);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr+8), globalCounter3);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(globalPtr+12), globalCounter4);
+	  //_mm_stream_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
+	}
+      }
+      
+
+      /** \todo how to further improve throughput using OpenMP? */
+      /*
+      #pragma omp parallel for schedule(static,1) num_threads(4)
+      for (unsigned int t=0; t<params.nThresholds; t++)
+      {
+	//unsigned int *pvtGlobalPtr = globalPtr + t*params.nFeatures; 
+	//unsigned char *pvtLocalPtr = localPtr + t*params.nFeatures;
+
+	//for (unsigned int f=0; f<params.nFeatures; f+=16, pvtGlobalPtr+=16, pvtLocalPtr+=16)
+	for (unsigned int f=0; f<params.nFeatures; f+=16)
+	{
+	  __m128i globalCounter1, globalCounter2, globalCounter3, globalCounter4;
+	  __m128i localCounter1, localCounter2, localCounter3, localCounter4;
+	  
+	  unsigned int *pvtGlobalPtr = globalPtr + t*params.nFeatures + f; 
+	  unsigned char *pvtLocalPtr = localPtr + t*params.nFeatures + f;
+
+	  globalCounter1 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr));
+	  globalCounter2 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+4));
+	  globalCounter3 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+8));
+	  globalCounter4 = _mm_loadu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+12));
+	  
+	  localCounter1 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr));
+	  localCounter2 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr+4));
+	  localCounter3 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr+8));
+	  localCounter4 = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(pvtLocalPtr+12));
+
+
+	  localCounter1 = _mm_unpacklo_epi8(localCounter1, _mm_setzero_si128());
+	  localCounter1 = _mm_unpacklo_epi16(localCounter1, _mm_setzero_si128());
+
+	  localCounter2 = _mm_unpacklo_epi8(localCounter2, _mm_setzero_si128());
+	  localCounter2 = _mm_unpacklo_epi16(localCounter2, _mm_setzero_si128());
+
+	  localCounter3 = _mm_unpacklo_epi8(localCounter3, _mm_setzero_si128());
+	  localCounter3 = _mm_unpacklo_epi16(localCounter3, _mm_setzero_si128());
+
+	  localCounter4 = _mm_unpacklo_epi8(localCounter4, _mm_setzero_si128());
+	  localCounter4 = _mm_unpacklo_epi16(localCounter4, _mm_setzero_si128());
+
+
+	  //localCounter = _mm_cvtsi32_si128(*reinterpret_cast<const int*>(localPtr));
+	  //localCounter = _mm_unpacklo_epi8(localCounter, localCounter);
+	  //localCounter = _mm_unpacklo_epi16(localCounter, localCounter);
+	  //localCounter = _mm_srai_epi32(localCounter, 24);
+
+	  globalCounter1 = _mm_add_epi32(globalCounter1, localCounter1);
+	  globalCounter2 = _mm_add_epi32(globalCounter2, localCounter2);
+	  globalCounter3 = _mm_add_epi32(globalCounter3, localCounter3);
+	  globalCounter4 = _mm_add_epi32(globalCounter4, localCounter4);
+
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr), globalCounter1);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+4), globalCounter2);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+8), globalCounter3);
+	  _mm_storeu_si128(reinterpret_cast<__m128i*>(pvtGlobalPtr+12), globalCounter4);
+	  //_mm_stream_si128(reinterpret_cast<__m128i*>(globalPtr), globalCounter);
+	}
+      }
+      */
+      
       toSkipImg = false;
     }
     
     if (!toSkipImg) toSkipTsImg[imgID] = false;
     
-
-    /*
-    // Multithread, local by thr/feature, global by thr/feature
-    bool toSkip = true;
-    #pragma omp parallel for
-    for (unsigned int s=0; s<currImage.getNSamples(); s++)
-    {
-      unsigned int id = currImage.getSamples()[s];
-      int nodeID = nodesIDImg[queueIdx*maxImgWidth*maxImgHeight+id];
-      unsigned int label = (unsigned int)currImage.getLabels()[id]-1;
-
-      // \todo move inside init 
-      if (currDepth==1) 
-	#pragma omp atomic
-	perClassTotSamples[nodeID*nClasses+label]++;
-
-      // If the current sample ends up in a node that belongs to a less deep level, skip it
-      // \todo Sampe skipping criteria inside per-image histogram update kernel?
-      if (nodeID<startNode || nodeID>endNode ||
-	  perNodeTotSamples[nodeID]<=params.perLeafSamplesThr) continue;
-
-      size_t perImgOffset =
-	queueIdx * (currImage.getNSamples()*params.nFeatures*params.nThresholds) +
-	s * (params.nThresholds*params.nFeatures);
-      size_t globalOffset = label * (params.nFeatures*params.nThresholds);
-
-      //unsigned int *globalPtr = &histogram[frontierIdxMap->at(nodeID)-frontierOffset][globalOffset];
-      unsigned char *localPtr = &perImgHistogram[perImgOffset];
-
-      // Manually unroll loops to perform more work per-thread and reduce thread launching overhead
-      //#pragma omp parallel for
-      for (unsigned int t=0; t<params.nThresholds; t++)
-      {
-	//for (unsigned int f=0; f<params.nFeatures; f++, globalPtr++, localPtr++)
-	for (unsigned int f=0; f<params.nFeatures; f++, globalOffset++, localPtr++)
-        {
-	  if (*localPtr)
-	  {
-            #pragma omp atomic
-	    histogram[frontierIdxMap->at(nodeID)-frontierOffset][globalOffset] += 
-	      static_cast<unsigned int>(*localPtr);
-	    assert(!nodeID || *globalPtr<=(perClassTotSamples[nodeID*nClasses+label]));
-	  }
-        }
-      }
-
-      toSkip = false;
-    }
-    toSkipTsImg[imgID] = toSkip;
-    */
-
     totGlobHistUpdateTime += boost::chrono::steady_clock::now() - startGlobHistUpdate;
 
     // Dequeue the image histogram id and signal
@@ -650,8 +695,9 @@ void *_updateGlobalHistogram(void *_data)
 
   boost::chrono::duration<double> totGlobHistUpdateSeconds = 
     boost::chrono::duration_cast<boost::chrono::duration<double> >(totGlobHistUpdateTime);
+  
   BOOST_LOG_TRIVIAL(info) << "Total global histogram update time: " << totGlobHistUpdateSeconds.count()
-			  << " seconds (avg: " << totGlobHistUpdateSeconds.count()/tsImages.size()
+                          //<< " seconds (avg: " << totGlobHistUpdateSeconds.count()/tsImages.size()
 			  << " seconds)";
-
+  
 }

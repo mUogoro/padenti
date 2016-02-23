@@ -60,6 +60,20 @@ private:
   cl::Image2D m_clPredictImg;
   cl::Buffer m_clPosteriorBuff;
 
+  cl::Buffer m_clImgPinn;
+  cl::Buffer m_clMaskPinn;
+  cl::Buffer m_clPredictImgPinn;
+  cl::Buffer m_clPosteriorPinn;
+
+  ImgType *m_clImgPinnPtr;
+  unsigned char *m_clMaskPinnPtr;
+  int *m_clPredictImgPinnPtr;
+  float *m_clPosteriorPinnPtr;
+  
+  size_t m_internalImgWidth;
+  size_t m_internalImgHeight;
+
+  void _initImgObjects(size_t, size_t, bool);
 
 public:
   //CLClassifier(const Tree<FeatType, FeatDim, nClasses> &tree,

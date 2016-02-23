@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -82,8 +84,10 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
 
   // Make the maximum width and height a multiple of the, respectively, work-group x and y
   // dimension
-  m_maxTsImgWidth += (m_maxTsImgWidth%WG_WIDTH) ? WG_WIDTH-(m_maxTsImgWidth%WG_WIDTH) : 0;
-  m_maxTsImgHeight += (m_maxTsImgHeight%WG_HEIGHT) ? WG_HEIGHT-(m_maxTsImgHeight%WG_HEIGHT) : 0;
+  //m_maxTsImgWidth += (m_maxTsImgWidth%WG_WIDTH) ? WG_WIDTH-(m_maxTsImgWidth%WG_WIDTH) : 0;
+  //m_maxTsImgHeight += (m_maxTsImgHeight%WG_HEIGHT) ? WG_HEIGHT-(m_maxTsImgHeight%WG_HEIGHT) : 0;
+  m_maxTsImgWidth += (m_maxTsImgWidth%16) ? 16-(m_maxTsImgWidth%16) : 0;
+  m_maxTsImgHeight += (m_maxTsImgHeight%16) ? 16-(m_maxTsImgHeight%16) : 0;
 
   // - initialize OpenCL images
   cl::size_t<3> origin, region;
@@ -239,7 +243,8 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   m_clPredictKern.setArg(9, m_clTreePosteriorsBuff);
   //m_clPredictKern.setArg(10, m_clTsNodesIDImg);
   //m_clPredictKern.setArg(11, m_clPredictImg);
-  m_clPredictKern.setArg(12, cl::Local(sizeof(FeatType)*WG_WIDTH*WG_HEIGHT*FeatDim));
+  //m_clPredictKern.setArg(12, cl::Local(sizeof(FeatType)*WG_WIDTH*WG_HEIGHT*FeatDim));
+  m_clPredictKern.setArg(12, cl::Local(sizeof(FeatType)*256*FeatDim));
 
   // - per-image histogram update
   //m_clPerImgHistKern.setArg(0, m_clTsImg);
@@ -258,7 +263,8 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   m_clPerImgHistKern.setArg(18, m_clTreeLeftChildBuff);
   m_clPerImgHistKern.setArg(19, m_clTreePosteriorsBuff);
   m_clPerImgHistKern.setArg(20, cl::Local(sizeof(FeatType)*8));
-  m_clPerImgHistKern.setArg(21, cl::Local(sizeof(FeatType)*WG_WIDTH*WG_HEIGHT*FeatDim));
+  //m_clPerImgHistKern.setArg(21, cl::Local(sizeof(FeatType)*WG_WIDTH*WG_HEIGHT*FeatDim));
+  m_clPerImgHistKern.setArg(21, cl::Local(sizeof(FeatType)*256*FeatDim));
 
   // - node's best feature/threshold learning
   m_clLearnBestFeatKern.setArg(0, m_clHistogramBuff);
@@ -304,6 +310,15 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
     const TreeNode<FeatType, FeatDim> &rootNode = tree.getNode(0); 
     std::copy(trainingSet.getPriors(), trainingSet.getPriors()+nClasses, rootNode.m_posterior);
   }
+
+
+  // Finally, init the random seed for features and thresholds sampling
+  /*
+  boost::random::mt19937 gen;
+  boost::random::uniform_int_distribution<> dist(0, (2<<30)-1);
+  m_seed = dist(gen);
+  m_clPerImgHistKern.setArg(22, m_seed);
+  */
 
   delete []tmpFeatUpBounds;
   delete []tmpFeatLowBounds;
@@ -361,4 +376,35 @@ unsigned int CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_in
   unsigned int nSlices = ceill((double)frontierSize/m_histogramSize);
 
   return nSlices;
+}
+
+template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
+	  unsigned int nClasses>
+void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_cleanTrain()
+{
+  // Release pinned memory objects
+  m_clQueue1.enqueueUnmapMemObject(m_clTsImgPinn, m_clTsImgPinnPtr);
+  m_clQueue1.enqueueUnmapMemObject(m_clTsLabelsImgPinn, m_clTsLabelsImgPinnPtr);
+  m_clQueue1.enqueueUnmapMemObject(m_clTsNodesIDImgPinn, m_clTsNodesIDImgPinnPtr);
+  m_clQueue1.enqueueUnmapMemObject(m_clTsSamplesBuffPinn, m_clTsSamplesBuffPinnPtr);
+  m_clQueue1.enqueueUnmapMemObject(m_clPerImgHistBuffPinn, m_clPerImgHistBuffPinnPtr);
+
+
+  // Delete data dinamically allocated for current tree training
+  delete []m_perNodeTotSamples;
+  delete []m_perClassTotSamples;
+  delete []m_toSkipTsImg;
+  delete []m_skippedTsImg;
+  delete m_clTsImg1;
+  delete m_clTsImg2;
+  delete []m_bestFeatures;
+  delete []m_bestThresholds;
+  delete []m_bestEntropies;
+  for (int i=0; i<m_histogramSize; i++)
+  {
+    delete []m_histogram[i];
+    m_histogram[i] = NULL;
+  }
+  delete []m_histogram;
+  delete []m_frontier;
 }

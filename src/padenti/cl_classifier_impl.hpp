@@ -27,9 +27,11 @@
 
 #include <padenti/predict.cl.inc>
 
-#define WG_WIDTH (4)
-#define WG_HEIGHT (64)
+#define WG_WIDTH (16)
+#define WG_HEIGHT (16)
 
+#define INIT_WIDTH (320)
+#define INIT_HEIGHT (240)
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -44,16 +46,6 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLClassifier(
   m_clDevice = m_clContext.getInfo<CL_CONTEXT_DEVICES>()[0];
   m_clQueue = cl::CommandQueue(m_clContext, m_clDevice, 0);
 
-  /*
-  std::ifstream clPredictFile("kernels/predict.cl");
-  if (!clPredictFile.is_open())
-  {
-    throw "Unable to read prediction kernel source";
-  }
-
-  std::istreambuf_iterator<char> eos;
-  std::string clPredictStr(std::istreambuf_iterator<char>(clPredictFile), eos);
-  */
   std::string clPredictStr(reinterpret_cast<const char*>(const_cast<const unsigned char*>(predict_cl)),
 			   predict_cl_len);
   cl::Program::Sources clPredictSrc(1, std::make_pair(clPredictStr.c_str(),
@@ -102,38 +94,30 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLClassifier(
   m_clPredictKern = cl::Kernel(m_clPredictProg, "predict");
   m_clComputePosteriorKern = cl::Kernel(m_clPredictProg, "computePosterior");
 
-  // Load tree
-  /*
-  unsigned int nNodes = (2<<(m_depth-1))-1;
-  cl_int errCode;
-
-  m_clTreeLeftChildBuff = cl::Buffer(m_clContext,
-				     CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
-				     nNodes*sizeof(cl_uint),
-				     (void*)tree.getLeftChildren());
-  m_clTreeFeaturesBuff = cl::Buffer(m_clContext,
-				    CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
-				    nNodes*sizeof(FeatType)*FeatDim,
-				    (void*)tree.getFeatures());
-  m_clTreeThrsBuff = cl::Buffer(m_clContext,
-				CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
-				nNodes*sizeof(FeatType),
-				(void*)tree.getThresholds());
-  m_clTreePosteriorsBuff = cl::Buffer(m_clContext,
-				      CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
-				      nNodes*sizeof(cl_float)*nClasses,
-				      (void*)tree.getPosteriors());
-  */
+  // Init OpenCL image objects used for prediction
+  // Note: use an image size of INIT_WIDTH X INIT_HEIGHT at beginning. If a wider image
+  // must be processed, resize all buffers.
+  // Note: using a large buffer allows work-items to access outside real image bounds
+  // during kernel computation. This must be prevented in some way...
+  // Note: we used pinned-memory trick for images/buffers that are read/written by the host
+  m_internalImgWidth = INIT_WIDTH;
+  m_internalImgHeight = INIT_HEIGHT;
+  _initImgObjects(m_internalImgWidth, m_internalImgHeight, false);
 
   // Done
 }
 
 
-/** \todo Possible optimization: init OpenCL image once and keep them while the input image size
- does not change */
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
-CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::~CLClassifier(){}
+CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::~CLClassifier()
+{
+  m_clQueue.enqueueUnmapMemObject(m_clPosteriorPinn, m_clPosteriorPinnPtr);
+  m_clQueue.enqueueUnmapMemObject(m_clPredictImgPinn, m_clPredictImgPinnPtr);
+  m_clQueue.enqueueUnmapMemObject(m_clMaskPinn, m_clMaskPinnPtr);
+  m_clQueue.enqueueUnmapMemObject(m_clImgPinn, m_clImgPinnPtr);
+  delete m_clImg; 
+}
 
 
 
@@ -146,6 +130,7 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::operator<<(
   unsigned int treeDepth = tree.getDepth();
   unsigned int nNodes = (2<<(treeDepth-1))-1;
 
+  
   m_clTreeLeftChildBuff.push_back(cl::Buffer(m_clContext,
 					     CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
 					     nNodes*sizeof(cl_uint),
@@ -162,6 +147,28 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::operator<<(
 					      CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
 					      nNodes*sizeof(cl_float)*nClasses,
 					      (void*)tree.getPosteriors()));
+  
+
+  /*
+  m_clTreeLeftChildBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					     nNodes*sizeof(cl_uint)));
+  m_clTreeFeaturesBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					    nNodes*sizeof(FeatType)*FeatDim));
+  m_clTreeThrsBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					nNodes*sizeof(FeatType)));
+  m_clTreePosteriorsBuff.push_back(cl::Buffer(m_clContext, CL_MEM_READ_ONLY,
+					      nNodes*sizeof(cl_float)*nClasses));
+
+  m_clQueue.enqueueWriteBuffer(m_clTreeLeftChildBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(cl_uint), (void*)tree.getLeftChildren());
+  m_clQueue.enqueueWriteBuffer(m_clTreeFeaturesBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(FeatType)*FeatDim, (void*)tree.getFeatures());
+  m_clQueue.enqueueWriteBuffer(m_clTreeThrsBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(FeatType), (void*)tree.getThresholds());
+  m_clQueue.enqueueWriteBuffer(m_clTreePosteriorsBuff.at(m_nTrees), CL_TRUE,
+			       0, nNodes*sizeof(cl_float)*nClasses, (void*)tree.getPosteriors());
+  */
+
   m_treeDepth.push_back(tree.getDepth());
   m_nTrees++;
 
@@ -194,35 +201,42 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
   fillWidth = (image.getWidth()%WG_WIDTH) ? WG_WIDTH-(image.getWidth()%WG_WIDTH) : 0;
   fillHeight = (image.getHeight()%WG_HEIGHT) ? WG_HEIGHT-(image.getHeight()%WG_HEIGHT) : 0;
 
+  if (image.getWidth()+fillWidth > m_internalImgWidth ||
+      image.getHeight()+fillHeight > m_internalImgHeight)
+  {
+    m_internalImgWidth = image.getWidth()+fillWidth;
+    m_internalImgHeight = image.getHeight()+fillHeight;
+    _initImgObjects(m_internalImgWidth, m_internalImgHeight, true);
+  }
+
   origin[0]=0; origin[1]=0; origin[2]=0;
   region[0]=image.getWidth()+fillWidth; region[1]=image.getHeight()+fillHeight;
-  region[2]= (nChannels<=4) ? 1 : nChannels;
+  region[2] = 1;
 
-  cl::ImageFormat clImgFormat;
-  ImgTypeTrait<ImgType, nChannels>::toCLImgFmt(clImgFormat);
-  if (nChannels<=4)
-  {
-    m_clImg = new cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			      region[0], region[1]);
-  }
-  else
-  {
-    m_clImg = new cl::Image3D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			      region[0], region[1], nChannels);
-  }
+  //cl::ImageFormat clImgFormat;
+  //ImgTypeTrait<ImgType, nChannels>::toCLImgFmt(clImgFormat);
+  //if (nChannels<=4)
+  //{
+  //  m_clImg = new cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			      region[0], region[1]);
+  //}
+  //else
+  //{
+  //  m_clImg = new cl::Image3D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			      region[0], region[1], nChannels);
+  //}
 
-  clImgFormat.image_channel_order = CL_R;
-  clImgFormat.image_channel_data_type = CL_SIGNED_INT32;
-  region[2]=1;
-  m_clNodesIDImg = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			       region[0], region[1]);
-
-  m_clPredictImg = cl::Image2D(m_clContext, CL_MEM_WRITE_ONLY, clImgFormat,
-			       region[0], region[1]);
-
-  clImgFormat.image_channel_data_type = CL_UNSIGNED_INT8;
-  m_clMask = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			 region[0], region[1]);
+  //clImgFormat.image_channel_order = CL_R;
+  //clImgFormat.image_channel_data_type = CL_SIGNED_INT32;
+  //region[2]=1;
+  //m_clNodesIDImg = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			       region[0], region[1]);
+  //m_clPredictImg = cl::Image2D(m_clContext, CL_MEM_WRITE_ONLY, clImgFormat,
+  //			       region[0], region[1]);
+  //
+  //clImgFormat.image_channel_data_type = CL_UNSIGNED_INT8;
+  //m_clMask = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			 region[0], region[1]);
 
   // Init prediction for depth 1 (i.e. all the pixels start from 0 (root) node)
 #ifdef CL_VERSION_1_2
@@ -239,19 +253,29 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
   // Load current image and mask
   region[0]=image.getWidth(); region[1]=image.getHeight();
   region[2]= (nChannels<=4) ? 1 : nChannels;
+  std::copy(image.getData(), image.getData()+region[0]*region[1]*nChannels,
+	    m_clImgPinnPtr);
   if (nChannels<=4)
   {
+    //m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image2D*>(m_clImg),
+    //				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
     m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image2D*>(m_clImg),
-				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
+				CL_FALSE, origin, region, 0, 0,
+				(void*)m_clImgPinnPtr);
   }
   else
   {
+    //m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image3D*>(m_clImg),
+    //				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
     m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image3D*>(m_clImg),
-				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
+				CL_FALSE, origin, region, 0, 0,
+				(void*)m_clImgPinnPtr);
   }
  
   region[2]=1;
-  m_clQueue.enqueueWriteImage(m_clMask, CL_FALSE, origin, region, 0, 0, (void*)mask.getData());
+  std::copy(mask.getData(), mask.getData()+region[0]*region[1], m_clMaskPinnPtr);
+  //m_clQueue.enqueueWriteImage(m_clMask, CL_FALSE, origin, region, 0, 0, (void*)mask.getData());
+  m_clQueue.enqueueWriteImage(m_clMask, CL_FALSE, origin, region, 0, 0, (void*)m_clMaskPinnPtr);
 
   // Set parameters and start prediction
   if (nChannels<=4)
@@ -287,10 +311,14 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
   }
 
   // Read results
-  m_clQueue.enqueueReadImage(m_clPredictImg, CL_TRUE, origin, region, 0, 0, (void*)prediction.getData());
+  //m_clQueue.enqueueReadImage(m_clPredictImg, CL_TRUE, origin, region, 0, 0, (void*)prediction.getData());
+  m_clQueue.enqueueReadImage(m_clPredictImg, CL_TRUE, origin, region, 0, 0, 
+			     (void*)m_clPredictImgPinnPtr);
+  std::copy(m_clPredictImgPinnPtr, m_clPredictImgPinnPtr+region[0]*region[1],
+	    prediction.getData());
 
   // Done
-  delete m_clImg;
+  //delete m_clImg;
 }
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
@@ -317,39 +345,48 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
   fillWidth = (image.getWidth()%WG_WIDTH) ? WG_WIDTH-(image.getWidth()%WG_WIDTH) : 0;
   fillHeight = (image.getHeight()%WG_HEIGHT) ? WG_HEIGHT-(image.getHeight()%WG_HEIGHT) : 0;
 
+  if (image.getWidth()+fillWidth > m_internalImgWidth ||
+      image.getHeight()+fillHeight > m_internalImgHeight)
+  {
+    m_internalImgWidth = image.getWidth()+fillWidth;
+    m_internalImgHeight = image.getHeight()+fillHeight;
+    _initImgObjects(m_internalImgWidth, m_internalImgHeight, true);
+  }
+
   origin[0]=0; origin[1]=0; origin[2]=0;
   region[0]=image.getWidth()+fillWidth; region[1]=image.getHeight()+fillHeight;
   region[2]= (nChannels<=4) ? 1 : nChannels;
 
-  cl::ImageFormat clImgFormat;
-  ImgTypeTrait<ImgType, nChannels>::toCLImgFmt(clImgFormat);
-  if (nChannels<=4)
-  {
-    m_clImg = new cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			      region[0], region[1]);
-  }
-  else
-  {
-    m_clImg = new cl::Image3D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			      region[0], region[1], nChannels);
-  }
+  //cl::ImageFormat clImgFormat;
+  //ImgTypeTrait<ImgType, nChannels>::toCLImgFmt(clImgFormat);
+  //if (nChannels<=4)
+  //{
+  //  m_clImg = new cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			      region[0], region[1]);
+  //}
+  //else
+  //{
+  // m_clImg = new cl::Image3D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			      region[0], region[1], nChannels);
+  //}
 
-  clImgFormat.image_channel_order = CL_R;
-  clImgFormat.image_channel_data_type = CL_SIGNED_INT32;
-  region[2]=1;
-  m_clNodesIDImg = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			       region[0], region[1]);
+  //clImgFormat.image_channel_order = CL_R;
+  //clImgFormat.image_channel_data_type = CL_SIGNED_INT32;
+  //region[2]=1;
+  //m_clNodesIDImg = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			       region[0], region[1]);
 
-  m_clPredictImg = cl::Image2D(m_clContext, CL_MEM_READ_WRITE, clImgFormat,
-			       region[0], region[1]);
+  //m_clPredictImg = cl::Image2D(m_clContext, CL_MEM_READ_WRITE, clImgFormat,
+  //			       region[0], region[1]);
 
-  clImgFormat.image_channel_data_type = CL_UNSIGNED_INT8;
-  m_clMask = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
-			 region[0], region[1]);
+  //clImgFormat.image_channel_data_type = CL_UNSIGNED_INT8;
+  //m_clMask = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+  //			 region[0], region[1]);
 
-  m_clPosteriorBuff = cl::Buffer(m_clContext, CL_MEM_WRITE_ONLY,
-				 image.getWidth()*image.getHeight()*nClasses*sizeof(cl_float),
-				 NULL);
+  //m_clPosteriorBuff = cl::Buffer(m_clContext, CL_MEM_WRITE_ONLY,
+  //				 image.getWidth()*image.getHeight()*nClasses*sizeof(cl_float),
+  //				 NULL);
+
   // Init posterior images channels to zero
 #ifdef CL_VERSION_1_2
   cl_float zeroPosterior = 0.f;
@@ -366,22 +403,32 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
   // Load current image and mask
   region[0]=image.getWidth(); region[1]=image.getHeight();
   region[2]= (nChannels<=4) ? 1 : nChannels;
+  std::copy(image.getData(), image.getData()+region[0]*region[1]*nChannels,
+	    m_clImgPinnPtr);
   if (nChannels<=4)
   {
+    //m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image2D*>(m_clImg),
+    //				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
     m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image2D*>(m_clImg),
-				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
+				CL_FALSE, origin, region, 0, 0,
+				(void*)m_clImgPinnPtr);
   }
   else
   {
+    //m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image3D*>(m_clImg),
+    //				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
     m_clQueue.enqueueWriteImage(*reinterpret_cast<cl::Image3D*>(m_clImg),
-				CL_FALSE, origin, region, 0, 0, (void*)image.getData());
-  } 
-  region[2]=1;
-  m_clQueue.enqueueWriteImage(m_clMask, CL_FALSE, origin, region, 0, 0, (void*)mask.getData());
+				CL_FALSE, origin, region, 0, 0,
+				(void*)m_clImgPinnPtr);
+  }
 
+  region[2]=1;
+  std::copy(mask.getData(), mask.getData()+region[0]*region[1], m_clMaskPinnPtr);
+  //m_clQueue.enqueueWriteImage(m_clMask, CL_FALSE, origin, region, 0, 0, (void*)mask.getData());
+  m_clQueue.enqueueWriteImage(m_clMask, CL_FALSE, origin, region, 0, 0, (void*)m_clMaskPinnPtr);
   
   // Init posterior image (stores leaves posterior for current tree)
-  float *currPosteriorBuff = new float[image.getWidth()*image.getHeight()*nClasses];
+  //float *currPosteriorBuff = new float[image.getWidth()*image.getHeight()*nClasses];
 
   // Set kernel arguments that do not change between calls
   if (nChannels<=4)
@@ -453,9 +500,12 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
 				   cl::NDRange(WG_WIDTH, WG_HEIGHT));
 
     // Read results
+    //m_clQueue.enqueueReadBuffer(m_clPosteriorBuff, CL_TRUE,
+    //                          0, image.getWidth()*image.getHeight()*nClasses*sizeof(cl_float),
+    //				(void*)currPosteriorBuff);
     m_clQueue.enqueueReadBuffer(m_clPosteriorBuff, CL_TRUE,
-                                0, image.getWidth()*image.getHeight()*nClasses*sizeof(cl_float),
-				(void*)currPosteriorBuff);
+				0, image.getWidth()*image.getHeight()*nClasses*sizeof(cl_float),
+				(void*)m_clPosteriorPinnPtr);
     
 
     // Sum current posterior to total posterior
@@ -464,20 +514,113 @@ void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::predict(
     for (int l=0; l<nClasses; l++)
     {
       float *posteriorPtr = posterior.getData()+l*(image.getWidth()*image.getHeight());
-      float *currPosteriorPtr = currPosteriorBuff+l*(image.getWidth()*image.getHeight());
+      //float *currPosteriorPtr = currPosteriorBuff+l*(image.getWidth()*image.getHeight());
+      float *currPosteriorPtr = m_clPosteriorPinnPtr+l*(image.getWidth()*image.getHeight());
       unsigned char *maskPtr = mask.getData();
       for (int v=0; v<image.getHeight(); v++)
       {
 	for (int u=0; u<image.getWidth(); u++, posteriorPtr++, currPosteriorPtr++, maskPtr++)
 	{
           if (!(*maskPtr)) continue;
-	  *posteriorPtr += *currPosteriorPtr/m_nTrees;
+	  *posteriorPtr += *currPosteriorPtr;
 	}
       }
     }
   }
 
+  // Normalize posterior
+  for (int i=0; i<image.getWidth()*image.getHeight()*nClasses; i++) 
+    posterior.getData()[i] /= m_nTrees;
+
   // Done
-  delete m_clImg;
-  delete []currPosteriorBuff;
+  //delete m_clImg;
+  //delete []currPosteriorBuff;
+}
+
+
+template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
+	  unsigned int nClasses>
+void CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initImgObjects(size_t width, size_t height, bool deallocate)
+{
+  if (deallocate)
+  {
+    m_clQueue.enqueueUnmapMemObject(m_clPosteriorPinn, m_clPosteriorPinnPtr);
+    m_clQueue.enqueueUnmapMemObject(m_clPredictImgPinn, m_clPredictImgPinnPtr);
+    m_clQueue.enqueueUnmapMemObject(m_clMaskPinn, m_clMaskPinnPtr);
+    m_clQueue.enqueueUnmapMemObject(m_clImgPinn, m_clImgPinnPtr);
+    delete m_clImg;
+  }
+
+
+  cl::size_t<3> origin, region;
+  
+  origin[0]=0; origin[1]=0; origin[2]=0;
+  region[0]=width; region[1]=height;
+  region[2]= (nChannels<=4) ? 1 : nChannels;
+
+
+  // Init the memory objects for the input image
+  cl::ImageFormat clImgFormat;
+  ImgTypeTrait<ImgType, nChannels>::toCLImgFmt(clImgFormat);
+  if (nChannels<=4)
+  {
+    m_clImg = new cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+			      region[0], region[1]);
+  }
+  else
+  {
+    m_clImg = new cl::Image3D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+			      region[0], region[1], nChannels);
+  }
+  m_clImgPinn = cl::Buffer(m_clContext,
+			   CL_MEM_READ_ONLY|CL_MEM_ALLOC_HOST_PTR,
+			   region[0]*region[1]*nChannels*sizeof(ImgType));
+  m_clImgPinnPtr = 
+    reinterpret_cast<ImgType*>(m_clQueue.enqueueMapBuffer(m_clImgPinn, CL_TRUE,
+							  CL_MAP_WRITE,
+							  0, region[0]*region[1]*nChannels*sizeof(ImgType)));
+
+
+  // Init memory objects for prediction results
+  clImgFormat.image_channel_order = CL_R;
+  clImgFormat.image_channel_data_type = CL_SIGNED_INT32;
+  region[2]=1;
+  m_clNodesIDImg = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+			       region[0], region[1]);
+
+  m_clPredictImg = cl::Image2D(m_clContext, CL_MEM_READ_WRITE, clImgFormat,
+			       region[0], region[1]);
+  m_clPredictImgPinn = cl::Buffer(m_clContext,
+				  CL_MEM_READ_ONLY|CL_MEM_ALLOC_HOST_PTR,
+				  region[0]*region[1]*sizeof(int));
+  m_clPredictImgPinnPtr =
+    reinterpret_cast<int*>(m_clQueue.enqueueMapBuffer(m_clPredictImgPinn, CL_TRUE,
+						      CL_MAP_WRITE|CL_MAP_WRITE,
+						      0, region[0]*region[1]*sizeof(int)));
+
+  // Init memory objects for mask
+  clImgFormat.image_channel_data_type = CL_UNSIGNED_INT8;
+  m_clMask = cl::Image2D(m_clContext, CL_MEM_READ_ONLY, clImgFormat,
+			 region[0], region[1]);
+  m_clMaskPinn = cl::Buffer(m_clContext,
+			    CL_MEM_READ_ONLY|CL_MEM_ALLOC_HOST_PTR,
+			    region[0]*region[1]*sizeof(unsigned char));
+  m_clMaskPinnPtr =
+    reinterpret_cast<unsigned char*>(m_clQueue.enqueueMapBuffer(m_clMaskPinn, CL_TRUE,
+								CL_MAP_WRITE,
+								0, region[0]*region[1]*sizeof(unsigned char)));
+ 
+  // Init memory objects for posterior
+  m_clPosteriorBuff = cl::Buffer(m_clContext, CL_MEM_WRITE_ONLY,
+				 region[0]*region[1]*nClasses*sizeof(cl_float),
+				 NULL);
+  m_clPosteriorPinn = cl::Buffer(m_clContext,
+				 CL_MEM_WRITE_ONLY|CL_MEM_ALLOC_HOST_PTR,
+				 region[0]*region[1]*nClasses*sizeof(cl_float));
+  m_clPosteriorPinnPtr =
+    reinterpret_cast<float*>(m_clQueue.enqueueMapBuffer(m_clPosteriorPinn, CL_TRUE,
+							CL_MAP_READ,
+							0, region[0]*region[1]*nClasses*sizeof(cl_float)));
+  
+  // Done
 }

@@ -47,36 +47,40 @@ __kernel void predict(__read_only image_t image, __read_only image2d_t mask,
   int2 coords = (int2)(get_global_id(0), get_global_id(1));
   unsigned char maskValue = read_imageui(mask, sampler, coords).x;
 
-  if (maskValue)
+  if (get_global_id(0) < width && get_global_id(1) < height)
   {
-    int nodeID = read_imagei(imageNodesID, sampler, coords).x;
-    int outNodeID = treeLeftChildren[nodeID];
 
-    if (outNodeID == -1)
+    if (maskValue)
     {
-      write_imagei(outNodesID, coords, (int4)(nodeID, 0, 0, 0));
-    }
-    else
-    {
-      __global feat_t *feature = treeFeatures+nodeID*featDim;
-      feat_t thr = treeThresholds[nodeID];
+      int nodeID = read_imagei(imageNodesID, sampler, coords).x;
+      int outNodeID = treeLeftChildren[nodeID];
 
-      for (int i=0; i<featDim; i++)
-	ACCESS_FEATURE(featuresBuff, i, featDim) = feature[i];
+      if (outNodeID == -1)
+      {
+	write_imagei(outNodesID, coords, (int4)(nodeID, 0, 0, 0));
+      }
+      else
+      {
+	__global feat_t *feature = treeFeatures+nodeID*featDim;
+	feat_t thr = treeThresholds[nodeID];
 
-      feat_t response = computeFeature(image, nChannels, width, height, coords,
-				       treeLeftChildren,
-				       treePosteriors,
-				       imageNodesID,
-				       featuresBuff, featDim);
-      outNodeID += (response<=thr) ? 0 : 1;
-      write_imagei(outNodesID, coords, (int4)(outNodeID, 0, 0, 0));
+	for (int i=0; i<featDim; i++)
+	  ACCESS_FEATURE(featuresBuff, i, featDim) = feature[i];
+
+	feat_t response = computeFeature(image, nChannels, width, height, coords,
+					 treeLeftChildren,
+					 treePosteriors,
+					 imageNodesID,
+					 featuresBuff, featDim);
+	outNodeID += (response<=thr) ? 0 : 1;
+	write_imagei(outNodesID, coords, (int4)(outNodeID, 0, 0, 0));
+      }
     }
-  }
-  else
-  {
-    /** \TODO: should it be written host side? Or should it be simply left unwritten? */
-    write_imagei(outNodesID, coords, (int4)(-1, 0, 0, 0));
+    //else
+    //{
+    //  /** \TODO: should it be written host side? Or should it be simply left unwritten? */
+    //  write_imagei(outNodesID, coords, (int4)(-1, 0, 0, 0));
+    //}
   }
 }
 
@@ -89,7 +93,7 @@ __kernel void computePosterior(__read_only image2d_t nodesID,
 {
   const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
-  if (get_global_id(0) <= width && get_global_id(1) <= height)
+  if (get_global_id(0) < width && get_global_id(1) < height)
   {
     int2 coords = (int2)(get_global_id(0), get_global_id(1));
     unsigned char maskValue = read_imageui(mask, sampler, coords).x;

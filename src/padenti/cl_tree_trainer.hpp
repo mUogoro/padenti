@@ -93,6 +93,7 @@ private:
   unsigned int *m_bestThresholds;
   float *m_bestEntropies;
 
+  unsigned int m_seed;
 
 private:
   void _initTrain(Tree<FeatType, FeatDim, nClasses> &tree,
@@ -108,6 +109,7 @@ private:
   void _learnBestFeatThr(Tree<FeatType, FeatDim, nClasses> &tree,
 			 const TreeTrainerParameters<FeatType, FeatDim> &params,
 			 unsigned int currDepth, unsigned int currSlice);
+  void _cleanTrain();
 
 public:
   CLTreeTrainer(const std::string &featureKernelPath, bool useCPU);

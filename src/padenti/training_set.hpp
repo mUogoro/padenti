@@ -45,8 +45,15 @@ private:
   float *m_priors;
 
   std::vector<TrainingSetImage<type, nChannels> > m_images;
-  std::string m_tsPath;
 public:
+
+  /*!
+   * Create an empty training set.
+   *
+   * \param Maximum number of different classes used for labeling
+   */
+  TrainingSet(unsigned int nClasses);
+
   /*!
    * Create a new training set. The following steps are performed:
    * - all pairs of files with the same prefix and the suffixes specified by the dataSuffix/
@@ -79,6 +86,16 @@ public:
    */
   const std::vector<TrainingSetImage<type, nChannels> > &getImages() const;
   
+
+  /*!
+   * Add a training set image to the training set
+   * 
+   * \param image a TrainingSetImage instance
+   */
+  TrainingSet<type, nChannels>&
+    operator<<(const TrainingSetImage<type, nChannels> &image);
+
+
   /*!
    * Get the number of images stored in the training set
    *

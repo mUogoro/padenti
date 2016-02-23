@@ -54,10 +54,16 @@
 
 // Size of the fifo queue used to parallelize global histogram updates
 /** \todo parameterize */
-#define GLOBAL_HISTOGRAM_FIFO_SIZE (8)
+//#define GLOBAL_HISTOGRAM_FIFO_SIZE (8)
+#define GLOBAL_HISTOGRAM_FIFO_SIZE (2)
 
-#define WG_WIDTH (4)
-#define WG_HEIGHT (64)
+// Workgroup size for prediction and local histogram update
+/** \todo parameterize workgroup sizes */
+#define WG_PREDICT_HEIGHT (16)
+#define WG_PREDICT_WIDTH (16)
+#define WG_LHIST_UPDATE_HEIGHT (1)
+#define WG_LHIST_UPDATE_WIDTH (256)
+
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
@@ -77,25 +83,6 @@ CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLTreeTrainer(co
   m_clQueue2 = cl::CommandQueue(m_clContext, m_clDevice, CL_QUEUE_PROFILING_ENABLE);
 
   // Compile training specific kernels
-  /**
-   * \todo avoid files name hard-coding
-   * \todo better error handling
-   */
-  /*
-  std::ifstream clHistUpdateFile("kernels/hist_update.cl");
-  std::ifstream clPredictFile("kernels/predict.cl");
-  std::ifstream clLearnBestFeatFile("kernels/learn_best_feature.cl");
-
-  if (!clHistUpdateFile.is_open() || !clPredictFile.is_open() || !clLearnBestFeatFile.is_open())
-  {
-    throw "Unable to read kernels source";
-  }
-
-  std::istreambuf_iterator<char> eos;
-  std::string clHistUpdateStr(std::istreambuf_iterator<char>(clHistUpdateFile), eos);
-  std::string clPredictStr(std::istreambuf_iterator<char>(clPredictFile), eos);
-  std::string clLearnBestFeatStr(std::istreambuf_iterator<char>(clLearnBestFeatFile), eos);
-  */
   std::string clHistUpdateStr(reinterpret_cast<const char*>(const_cast<const unsigned char*>(hist_update_cl)),
 			      hist_update_cl_len);
   std::string clPredictStr(reinterpret_cast<const char*>(const_cast<const unsigned char*>(predict_cl)),
@@ -214,11 +201,13 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::train(
     unsigned int frontierSize = _initFrontier(tree, params, currDepth);
     unsigned int nSlices = _initHistogram(params);
 
+    
     if (nSlices>1)
     {
       BOOST_LOG_TRIVIAL(info) << "Maximum allowed global histogram size reached: split in "
 			      << nSlices << " slices";
     }
+    
 
     // Flag all images as to-be-skipped: the flag will be set to false if at least one
     // image pixel is processed
@@ -237,29 +226,20 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::train(
     boost::chrono::duration<double> perLevelTrainTime =
       boost::chrono::duration_cast<boost::chrono::duration<double> >(boost::chrono::steady_clock::now() - 
 								   perLevelTrainStart);
+    
     BOOST_LOG_TRIVIAL(info) << "Depth " << currDepth << " trained in "
 			    << perLevelTrainTime.count() << " seconds";
+    
   }
+
+  _cleanTrain();
 }
 
 
 template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
 	  unsigned int nClasses>
 CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::~CLTreeTrainer()
-{
-  /** \todo full OpenCL cleanup */
-  delete m_clTsImg1;
-  delete m_clTsImg2;
-
-  for (int i=0; i<m_histogramSize; i++)
-  {
-    delete []m_histogram[i];
-    m_histogram[i] = NULL;
-  }
-  delete []m_histogram;
-  delete []m_toSkipTsImg;
-  delete []m_skippedTsImg;
-}
+{}
 
 
 #include <padenti/cl_tree_trainer_impl_init.hpp>

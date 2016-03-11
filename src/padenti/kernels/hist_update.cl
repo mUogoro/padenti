@@ -117,6 +117,110 @@ __kernel void computePerImageHistogram(__read_only image_t image,
   // trained leaves
   if (nodeID>=startNode && nodeID<=endNode)
   {
+    feat = computeFeature(image, nChannels, width, height, coords,
+			  treeLeftChildren, treePosteriors, nodesID,
+			  featuresBuff, featDim);
+  
+    /** \todo speed up threshold sampling by sampling 4 thresholds at a time */
+    seed.x = treeID;
+    seed.y = read_imagei(nodesID, sampler, coords).x;
+    seed.z = get_global_id(1);
+    seed.w = 1;
+    perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
+        
+    for (uint t=0; t<nThresholds;)
+    { 
+      seed = md5Rand(seed);
+
+      thr = thrLowBound + 
+	(feat_t)(((float)seed.x)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
+      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
+      perImageHistogram += get_global_size(1);
+      ++t;
+      if ((t)>=nThresholds) break;
+
+      thr = thrLowBound + 
+	(feat_t)(((float)seed.y)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
+      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
+      perImageHistogram += get_global_size(1);
+      ++t;
+      if ((t)>=nThresholds) break;
+    
+      thr = thrLowBound + 
+	(feat_t)(((float)seed.z)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
+      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
+      perImageHistogram += get_global_size(1);
+      ++t;
+      if ((t)>=nThresholds) break;
+      
+      thr = thrLowBound + 
+	(feat_t)(((float)seed.w)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
+      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
+      perImageHistogram += get_global_size(1);
+      ++t;
+    }
+    
+  }
+}
+
+
+/** \todo: remove unused arguments */
+__kernel void computePerImageHistogramWithLUT(__read_only image_t image,
+					      uint nChannels, uint width, uint height,
+					      __read_only image2d_t labels,
+					      __read_only image2d_t nodesID,
+					      __global uint *samples, uint nSamples,
+					     uint featDim,
+					      __global feat_t *featLowBounds, __global feat_t *featUpBounds,
+					      uint nThresholds, feat_t thrLowBound, feat_t thrUpBound,
+					      __global uchar *perImageHistogram,
+					      uint treeID, int startNode, int endNode,
+					     __global int *treeLeftChildren,
+					      __global float *treePosteriors,
+					      __local feat_t *tmp,
+					      __local feat_t *featuresBuff,
+					      __global feat_t *lut, uint lutSize)
+                                              //,uint baseSeed)
+{
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+  uint4 seed;
+  feat_t feat, thr;
+  int2 coords;
+  int nodeID;
+
+  coords.x = samples[get_global_id(0)];
+  coords = (int2)(coords.x%width, coords.x/width);
+  nodeID = read_imagei(nodesID, sampler, coords).x;
+
+  seed.x = treeID;
+  seed.y = nodeID;
+  seed.z = get_global_id(1);
+  seed.w = 0; // Non zero value for 4th int???
+
+  /*
+  seed.x = treeID^baseSeed;
+  seed.y = nodeID^baseSeed;
+  seed.z = get_global_id(1)^baseSeed;
+  seed.w = baseSeed;
+  */
+
+  /** \todo: avoid waste of resource: only one int32 out of four is used. */
+  seed = md5Rand(seed);
+
+  /** 
+   * \todo better int32-to-float32 conversion
+  */
+  int idx = round((float)seed.x/0xFFFFFFFF * lutSize)*featDim;
+
+  for (int i=0; i<featDim; i++)
+  {
+    ACCESS_FEATURE(featuresBuff, i, featDim) = lut[idx+i];
+  }
+
+  // Perform computation on image samples only if they reach the current slice of
+  // trained leaves
+  if (nodeID>=startNode && nodeID<=endNode)
+  {
 
     //offset = (get_global_id(0)*get_global_size(1)+get_global_id(1))*featDim;
     feat = computeFeature(image, nChannels, width, height, coords,
@@ -128,20 +232,7 @@ __kernel void computePerImageHistogram(__read_only image_t image,
     seed.y = read_imagei(nodesID, sampler, coords).x;
     seed.z = get_global_id(1);
     seed.w = 1;
-    //offset = get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
     perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
-
-    /*
-    for (uint t=0; t<nThresholds; t++)
-    { 
-      thr = thrLowBound + (feat_t)((float)t*(thrUpBound-thrLowBound)/nThresholds);
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-    }
-    */
-    
     
     for (uint t=0; t<nThresholds;)
     { 
@@ -149,8 +240,6 @@ __kernel void computePerImageHistogram(__read_only image_t image,
 
       thr = thrLowBound + 
 	(feat_t)(((float)seed.x)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
       *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
       perImageHistogram += get_global_size(1);
       ++t;
@@ -158,8 +247,6 @@ __kernel void computePerImageHistogram(__read_only image_t image,
 
       thr = thrLowBound + 
 	(feat_t)(((float)seed.y)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
       *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
       perImageHistogram += get_global_size(1);
       ++t;
@@ -167,8 +254,6 @@ __kernel void computePerImageHistogram(__read_only image_t image,
     
       thr = thrLowBound + 
 	(feat_t)(((float)seed.z)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
       *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
       perImageHistogram += get_global_size(1);
       ++t;
@@ -176,8 +261,6 @@ __kernel void computePerImageHistogram(__read_only image_t image,
       
       thr = thrLowBound + 
 	(feat_t)(((float)seed.w)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
       *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
       perImageHistogram += get_global_size(1);
       ++t;

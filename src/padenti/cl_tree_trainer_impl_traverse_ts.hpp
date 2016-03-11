@@ -101,6 +101,11 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
   consumerProducerData.fifoCond = &fifoCond;
   consumerProducerData.fifoQueue = &fifoQueue;
 
+  
+  // Select the appropriate histogram update kernel
+  cl::Kernel *clPerImgHistKernPtr = 
+    (params.lutSize) ? &m_clPerImgHistLUTKern : &m_clPerImgHistKern;
+
 
   // Start the consumer
   int queueIdx=0;
@@ -248,27 +253,26 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_traverseTr
     /** \todo Assure number of samples/#features are multiple of 8 */
     if (nChannels<=4)
     {
-      m_clPerImgHistKern.setArg(0, *reinterpret_cast<cl::Image2D*>((imgID%2) ?
+      clPerImgHistKernPtr->setArg(0, *reinterpret_cast<cl::Image2D*>((imgID%2) ?
 								   m_clTsImg2 : m_clTsImg1));
     }
     else
     {
-      m_clPerImgHistKern.setArg(0, *reinterpret_cast<cl::Image3D*>((imgID%2) ?
+      clPerImgHistKernPtr->setArg(0, *reinterpret_cast<cl::Image3D*>((imgID%2) ?
 								   m_clTsImg2 : m_clTsImg1));
     }
-    m_clPerImgHistKern.setArg(2, currImage.getWidth());
-    m_clPerImgHistKern.setArg(3, currImage.getHeight());
-    m_clPerImgHistKern.setArg(4, (imgID%2) ? m_clTsLabelsImg2 : m_clTsLabelsImg1);
-    m_clPerImgHistKern.setArg(5, (imgID%2) ? m_clTsNodesIDImg2 : m_clTsNodesIDImg1);
-    m_clPerImgHistKern.setArg(6, (imgID%2) ? m_clTsSamplesBuff2 : m_clTsSamplesBuff1);
-    m_clPerImgHistKern.setArg(7, currImage.getNSamples());
-    m_clPerImgHistKern.setArg(14, (imgID%2) ? m_clPerImgHistBuff2 : m_clPerImgHistBuff1);
-    m_clPerImgHistKern.setArg(16, startNode);
-    m_clPerImgHistKern.setArg(17, endNode);
-    weCLQueue->enqueueNDRangeKernel(m_clPerImgHistKern,
+    clPerImgHistKernPtr->setArg(2, currImage.getWidth());
+    clPerImgHistKernPtr->setArg(3, currImage.getHeight());
+    clPerImgHistKernPtr->setArg(4, (imgID%2) ? m_clTsLabelsImg2 : m_clTsLabelsImg1);
+    clPerImgHistKernPtr->setArg(5, (imgID%2) ? m_clTsNodesIDImg2 : m_clTsNodesIDImg1);
+    clPerImgHistKernPtr->setArg(6, (imgID%2) ? m_clTsSamplesBuff2 : m_clTsSamplesBuff1);
+    clPerImgHistKernPtr->setArg(7, currImage.getNSamples());
+    clPerImgHistKernPtr->setArg(14, (imgID%2) ? m_clPerImgHistBuff2 : m_clPerImgHistBuff1);
+    clPerImgHistKernPtr->setArg(16, startNode);
+    clPerImgHistKernPtr->setArg(17, endNode);
+    weCLQueue->enqueueNDRangeKernel(*clPerImgHistKernPtr,
 				    cl::NullRange,
 				    cl::NDRange(currImage.getNSamples(), params.nFeatures),
-				    //cl::NDRange(WG_WIDTH, WG_HEIGHT),
 				    cl::NDRange(WG_LHIST_UPDATE_HEIGHT, WG_LHIST_UPDATE_WIDTH),
 				    NULL, (imgID%2) ? &endComputeEvent2 : &endComputeEvent1);
     }

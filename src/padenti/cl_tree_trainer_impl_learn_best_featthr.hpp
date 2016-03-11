@@ -84,9 +84,9 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
 
     /** \todo Check if nThreads is a multiple of 32 */
     m_clQueue1.enqueueNDRangeKernel(m_clLearnBestFeatKern,
-				   cl::NullRange,
-				   cl::NDRange(nThreads),
-				   cl::NDRange(32));
+				    cl::NullRange,
+				    cl::NDRange(nThreads),
+				    cl::NDRange(32));
 
     m_clQueue1.enqueueReadBuffer(m_clBestFeaturesBuff,
 				CL_FALSE,
@@ -185,26 +185,42 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
 			      perNodeBestFeatures[bestID],
 			      0};
       unsigned int state[4];
-      for (unsigned int j=0; j<FeatDim; j+=4)
+
+      if (params.lutSize)
       {
 	md5Rand(seed, state);
+	
+	int idx = round((float)state[0]/0xFFFFFFFF*params.lutSize)*FeatDim;
+	std::copy(params.lut.begin()+idx,
+		  params.lut.begin()+idx+FeatDim, currNode.m_feature);
+      }
+      else
+      {
+	for (unsigned int j=0; j<FeatDim; j+=4)
+	{
+	  md5Rand(seed, state);
 	 
-	currNode.m_feature[j] = params.featLowBounds[j] +
-	  (FeatType)(((float)state[0])/(0xFFFFFFFF)*(params.featUpBounds[j]-params.featLowBounds[j]));
-	if ((j+1)>=FeatDim) break;
+	  currNode.m_feature[j] = params.featLowBounds[j] +
+	    (FeatType)(((float)state[0])/(0xFFFFFFFF)*(params.featUpBounds[j]-
+						       params.featLowBounds[j]));
+	  if ((j+1)>=FeatDim) break;
 
-	currNode.m_feature[j+1] = params.featLowBounds[j+1]  +
-	  (FeatType)(((float)state[1])/(0xFFFFFFFF)*(params.featUpBounds[j+1]-params.featLowBounds[j+1]));
-	if ((j+2)>=FeatDim) break;
+	  currNode.m_feature[j+1] = params.featLowBounds[j+1]  +
+	    (FeatType)(((float)state[1])/(0xFFFFFFFF)*(params.featUpBounds[j+1]-
+						       params.featLowBounds[j+1]));
+	  if ((j+2)>=FeatDim) break;
 	  
-	currNode.m_feature[j+2] = params.featLowBounds[j+2] +
-	  (FeatType)(((float)state[2])/(0xFFFFFFFF)*(params.featUpBounds[j+2]-params.featLowBounds[j+2]));
-	if ((j+3)>=FeatDim) break;	  
+	  currNode.m_feature[j+2] = params.featLowBounds[j+2] +
+	    (FeatType)(((float)state[2])/(0xFFFFFFFF)*(params.featUpBounds[j+2]-
+						       params.featLowBounds[j+2]));
+	  if ((j+3)>=FeatDim) break;	  
 
-	currNode.m_feature[j+3] = params.featLowBounds[j+3] +
-	  (FeatType)(((float)state[3])/(0xFFFFFFFF)*(params.featUpBounds[j+3]-params.featLowBounds[j+3]));
+	  currNode.m_feature[j+3] = params.featLowBounds[j+3] +
+	    (FeatType)(((float)state[3])/(0xFFFFFFFF)*(params.featUpBounds[j+3]-
+						       params.featLowBounds[j+3]));
 	  
-	std::copy(state, state+4, seed);
+	  std::copy(state, state+4, seed);
+	}
       }
 
       

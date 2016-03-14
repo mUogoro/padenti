@@ -186,13 +186,13 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
 			      0};
       unsigned int state[4];
 
-      if (params.lutSize)
+      if (params.featLut.size())
       {
 	md5Rand(seed, state);
 	
-	int idx = round((float)state[0]/0xFFFFFFFF*params.lutSize)*FeatDim;
-	std::copy(params.lut.begin()+idx,
-		  params.lut.begin()+idx+FeatDim, currNode.m_feature);
+	int idx = floor((float)state[0]/0xFFFFFFFF*params.featLut.size()/FeatDim)*FeatDim;
+	std::copy(params.featLut.begin()+idx,
+		  params.featLut.begin()+idx+FeatDim, currNode.m_feature);
       }
       else
       {
@@ -233,21 +233,22 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
 	md5Rand(seed, state);
 	std::copy(state, state+4, seed);
       }
-      *currNode.m_threshold = params.thrLowBound +
-	(FeatType)((float)state[perNodeBestThresholds[bestID]%4]/0xFFFFFFFF*
-		   (params.thrUpBound-params.thrLowBound));
-      
 
-      /*
-      *currNode.m_threshold = params.thrLowBound + 
-       (FeatType)((float)perNodeBestThresholds[bestID]*
-      	   (params.thrUpBound-params.thrLowBound)/params.nThresholds);
-      */
-
+      if (params.thrLut.size())
+      {
+	int idx = floor((float)state[perNodeBestThresholds[bestID]%4]/0xFFFFFFFF *
+			params.thrLut.size());
+	*currNode.m_threshold = params.thrLut.at(idx);
+      }
+      else
+      {
+	*currNode.m_threshold = params.thrLowBound +
+	  (FeatType)((float)state[perNodeBestThresholds[bestID]%4]/0xFFFFFFFF*
+		     (params.thrUpBound-params.thrLowBound));
+      }
 
       // Update current node left child
       *currNode.m_leftChild = nodeID*2+1;
-
 
       // Done with node
 

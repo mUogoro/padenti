@@ -49,18 +49,33 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
 				      (void*)tree.getPosteriors());
 
   
-  // Offsets LUT and kernel initialization (only if the LUT size different than zero)
-  cl::Kernel *clPerImgHistKernPtr = &m_clPerImgHistKern;
-  if (params.lutSize)
+  // LUTs initialization (only if the LUT size different than zero)
+  if (!params.featLut.empty())
   {
     /** \todo find a way to directly use c++ iterators */
-    FeatType *tmp = new FeatType[params.lutSize*FeatDim];
-    std::copy(params.lut.begin(), params.lut.end(), tmp);
-    m_clLutBuff = cl::Buffer(m_clContext, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
-			     params.lutSize*FeatDim*sizeof(FeatType), tmp);
-    clPerImgHistKernPtr = &m_clPerImgHistLUTKern;
-    clPerImgHistKernPtr->setArg(22, m_clLutBuff);
-    clPerImgHistKernPtr->setArg(23, params.lutSize);
+    FeatType *tmp = new FeatType[params.featLut.size()];
+    std::copy(params.featLut.begin(), params.featLut.end(), tmp);
+    m_clFeatLutBuff = cl::Buffer(m_clContext, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
+				 params.featLut.size()*sizeof(FeatType), tmp);
+  }
+  else
+  {
+    // Trick: if no LUT is used, initialize the corresponding buffer as a single-value
+    // vector to avoid CL_INVALID_ARG_VALUE
+    m_clFeatLutBuff = cl::Buffer(m_clContext, CL_MEM_READ_ONLY, sizeof(FeatType));
+  }
+
+  if (!params.thrLut.empty())
+  {
+    FeatType *tmp = new FeatType[params.thrLut.size()];
+    std::copy(params.thrLut.begin(), params.thrLut.end(), tmp);
+    m_clThrLutBuff = cl::Buffer(m_clContext, CL_MEM_READ_ONLY|CL_MEM_COPY_HOST_PTR,
+				params.thrLut.size()*sizeof(FeatType), tmp);
+  }
+  else
+  {
+    // Same trick as above
+    m_clThrLutBuff = cl::Buffer(m_clContext, CL_MEM_READ_ONLY, sizeof(FeatType));
   }
 
   // Init per-node total and per-class number of samples
@@ -262,24 +277,22 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   m_clPredictKern.setArg(12, cl::Local(sizeof(FeatType)*256*FeatDim));
 
   // - per-image histogram update
-  //clPerImgHistKernPtr->setArg(0, m_clTsImg);
-  clPerImgHistKernPtr->setArg(1, nChannels);
-  //clPerImgHistKernPtr->setArg(4, m_clTsLabelsImg);
-  //clPerImgHistKernPtr->setArg(5, m_clTsNodesIDImg);
-  //clPerImgHistKernPtr->setArg(6, m_clTsSamplesBuff);
-  clPerImgHistKernPtr->setArg(8, FeatDim);
-  clPerImgHistKernPtr->setArg(9, m_clFeatLowBoundsBuff);
-  clPerImgHistKernPtr->setArg(10, m_clFeatUpBoundsBuff);
-  clPerImgHistKernPtr->setArg(11, params.nThresholds);
-  clPerImgHistKernPtr->setArg(12, params.thrLowBound);
-  clPerImgHistKernPtr->setArg(13, params.thrUpBound);
-  //clPerImgHistKernPtr->setArg(14, m_clPerImgHistBuff);
-  clPerImgHistKernPtr->setArg(15, tree.getID());
-  clPerImgHistKernPtr->setArg(18, m_clTreeLeftChildBuff);
-  clPerImgHistKernPtr->setArg(19, m_clTreePosteriorsBuff);
-  clPerImgHistKernPtr->setArg(20, cl::Local(sizeof(FeatType)*8));
-  //clPerImgHistKernPtr->setArg(21, cl::Local(sizeof(FeatType)*WG_WIDTH*WG_HEIGHT*FeatDim));
-  clPerImgHistKernPtr->setArg(21, cl::Local(sizeof(FeatType)*256*FeatDim));
+  m_clPerImgHistKern.setArg(1, nChannels);
+  m_clPerImgHistKern.setArg(8, FeatDim);
+  m_clPerImgHistKern.setArg(9, m_clFeatLowBoundsBuff);
+  m_clPerImgHistKern.setArg(10, m_clFeatUpBoundsBuff);
+  m_clPerImgHistKern.setArg(11, params.nThresholds);
+  m_clPerImgHistKern.setArg(12, params.thrLowBound);
+  m_clPerImgHistKern.setArg(13, params.thrUpBound);
+  m_clPerImgHistKern.setArg(15, tree.getID());
+  m_clPerImgHistKern.setArg(18, m_clTreeLeftChildBuff);
+  m_clPerImgHistKern.setArg(19, m_clTreePosteriorsBuff);
+  m_clPerImgHistKern.setArg(20, m_clFeatLutBuff);
+  m_clPerImgHistKern.setArg(21, static_cast<cl_uint>(params.featLut.size()/FeatDim));
+  m_clPerImgHistKern.setArg(22, m_clThrLutBuff);
+  m_clPerImgHistKern.setArg(23, static_cast<cl_uint>(params.thrLut.size()));
+  m_clPerImgHistKern.setArg(24, cl::Local(sizeof(FeatType)*8));
+  m_clPerImgHistKern.setArg(25, cl::Local(sizeof(FeatType)*WG_LHIST_UPDATE_WIDTH*FeatDim));
 
   // - node's best feature/threshold learning
   m_clLearnBestFeatKern.setArg(0, m_clHistogramBuff);
@@ -332,7 +345,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   boost::random::mt19937 gen;
   boost::random::uniform_int_distribution<> dist(0, (2<<30)-1);
   m_seed = dist(gen);
-  clPerImgHistKernPtr->setArg(22, m_seed);
+  m_clPerImgHistKern.setArg(22, m_seed);
   */
 
   delete []tmpFeatUpBounds;

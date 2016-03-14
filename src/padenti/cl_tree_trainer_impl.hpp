@@ -174,7 +174,6 @@ CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLTreeTrainer(co
 
   /** \todo avoid kernels name hardcoding? */
   m_clPerImgHistKern = cl::Kernel(m_clHistUpdateProg, "computePerImageHistogram");
-  m_clPerImgHistLUTKern = cl::Kernel(m_clHistUpdateProg, "computePerImageHistogramWithLUT");
   m_clPredictKern = cl::Kernel(m_clPredictProg, "predict");
   m_clLearnBestFeatKern = cl::Kernel(m_clLearnBestFeatProg, "learnBestFeature");
 }

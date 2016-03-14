@@ -48,10 +48,10 @@ public:
   bool randomThrSampling;          /*!< Number of pixels sampled from each image */
   unsigned int perLeafSamplesThr;  /*!< Mininum number of pixels at each leaf node
 				     to allow further splitting */
-  std::vector<FeatType> lut;       /*!< LookUp Table with features values, stored
+  std::vector<FeatType> featLut;   /*!< LookUp Table with features values, stored
 				     in row-major format */
-  uint lutSize;                  /*!< Number of features stored within the LUT.
-                                        Must be zero if the LUT is not used. */
+  std::vector<FeatType> thrLut;    /*!< LookUp Table with threshold values, stored
+				     in row-major format */
 };
 
 

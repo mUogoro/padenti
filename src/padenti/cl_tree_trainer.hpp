@@ -41,7 +41,6 @@ private:
   cl::Program m_clPredictProg;
   cl::Program m_clLearnBestFeatProg;
   cl::Kernel m_clPerImgHistKern;
-  cl::Kernel m_clPerImgHistLUTKern;
   cl::Kernel m_clPredictKern;
   cl::Kernel m_clLearnBestFeatKern;
   
@@ -50,7 +49,8 @@ private:
   cl::Buffer m_clTreeThrsBuff;
   cl::Buffer m_clTreePosteriorsBuff;
 
-  cl::Buffer m_clLutBuff;
+  cl::Buffer m_clFeatLutBuff;
+  cl::Buffer m_clThrLutBuff;
 
   //cl::Image2D m_clTsImg1,          m_clTsImg2;
   cl::Image   *m_clTsImg1,         *m_clTsImg2;

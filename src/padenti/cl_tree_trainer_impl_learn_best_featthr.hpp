@@ -188,11 +188,35 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_learnBestF
 
       if (params.featLut.size())
       {
-	md5Rand(seed, state);
+	int idx, lutEntrySize = FeatDim/params.nFeatLutSamples;
+	for (int n=0; n<params.nFeatLutSamples; )
+	{
+	  md5Rand(seed, state);
 	
-	int idx = floor((float)state[0]/0xFFFFFFFF*params.featLut.size()/FeatDim)*FeatDim;
-	std::copy(params.featLut.begin()+idx,
-		  params.featLut.begin()+idx+FeatDim, currNode.m_feature);
+	  idx = floor((float)state[0]/0xFFFFFFFF*params.featLut.size()/lutEntrySize)*lutEntrySize;
+	  std::copy(params.featLut.begin()+idx,
+		    params.featLut.begin()+idx+lutEntrySize,
+		    currNode.m_feature+n*lutEntrySize);
+	  if ((++n)>=params.nFeatLutSamples) break;
+
+	  idx = floor((float)state[1]/0xFFFFFFFF*params.featLut.size()/lutEntrySize)*lutEntrySize;
+	  std::copy(params.featLut.begin()+idx,
+		    params.featLut.begin()+idx+lutEntrySize,
+		    currNode.m_feature+n*lutEntrySize);
+	  if ((++n)>=params.nFeatLutSamples) break;
+
+	  idx = floor((float)state[2]/0xFFFFFFFF*params.featLut.size()/lutEntrySize)*lutEntrySize;
+	  std::copy(params.featLut.begin()+idx,
+		    params.featLut.begin()+idx+lutEntrySize,
+		    currNode.m_feature+n*lutEntrySize);
+	  if ((++n)>=params.nFeatLutSamples) break;
+
+	  idx = floor((float)state[3]/0xFFFFFFFF*params.featLut.size()/lutEntrySize)*lutEntrySize;
+	  std::copy(params.featLut.begin()+idx,
+		    params.featLut.begin()+idx+lutEntrySize,
+		    currNode.m_feature+n*lutEntrySize);
+	  ++n;
+	}
       }
       else
       {

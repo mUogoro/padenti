@@ -277,6 +277,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   m_clPredictKern.setArg(12, cl::Local(sizeof(FeatType)*256*FeatDim));
 
   // - per-image histogram update
+  int lutEntrySize = params.featLut.size() ? FeatDim/params.nFeatLutSamples : 1;
   m_clPerImgHistKern.setArg(1, nChannels);
   m_clPerImgHistKern.setArg(8, FeatDim);
   m_clPerImgHistKern.setArg(9, m_clFeatLowBoundsBuff);
@@ -288,11 +289,12 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   m_clPerImgHistKern.setArg(18, m_clTreeLeftChildBuff);
   m_clPerImgHistKern.setArg(19, m_clTreePosteriorsBuff);
   m_clPerImgHistKern.setArg(20, m_clFeatLutBuff);
-  m_clPerImgHistKern.setArg(21, static_cast<cl_uint>(params.featLut.size()/FeatDim));
+  m_clPerImgHistKern.setArg(21, static_cast<cl_uint>(params.featLut.size()/lutEntrySize));
   m_clPerImgHistKern.setArg(22, m_clThrLutBuff);
   m_clPerImgHistKern.setArg(23, static_cast<cl_uint>(params.thrLut.size()));
   m_clPerImgHistKern.setArg(24, cl::Local(sizeof(FeatType)*8));
   m_clPerImgHistKern.setArg(25, cl::Local(sizeof(FeatType)*WG_LHIST_UPDATE_WIDTH*FeatDim));
+  m_clPerImgHistKern.setArg(26, params.nFeatLutSamples);
 
   // - node's best feature/threshold learning
   m_clLearnBestFeatKern.setArg(0, m_clHistogramBuff);

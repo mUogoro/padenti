@@ -32,243 +32,6 @@
 
 #include <feature.cl>
 
-uint4 md5Rand(uint4 seed);
-__kernel void _computePerImageHistogram(__read_only image_t image,
-				       uint nChannels, uint width, uint height,
-				       __read_only image2d_t labels,
-				       __read_only image2d_t nodesID,
-				       __global uint *samples, uint nSamples,
-				       uint featDim,
-				       __global feat_t *featLowBounds, __global feat_t *featUpBounds,
-				       uint nThresholds, feat_t thrLowBound, feat_t thrUpBound,
-				       __global uchar *perImageHistogram,
-				       uint treeID, int startNode, int endNode,
-				       __global int *treeLeftChildren,
-				       __global float *treePosteriors,
-				       __local feat_t *tmp,
-				       __local feat_t *featuresBuff)
-                                       //,uint baseSeed)
-{
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-  uint4 seed;
-  feat_t feat, thr;
-  int2 coords;
-  int nodeID;
-
-  coords.x = samples[get_global_id(0)];
-  coords = (int2)(coords.x%width, coords.x/width);
-  nodeID = read_imagei(nodesID, sampler, coords).x;
-
-  seed.x = treeID;
-  seed.y = nodeID;
-  seed.z = get_global_id(1);
-  seed.w = 0; // Non zero value for 4th int???
-
-  /*
-  seed.x = treeID^baseSeed;
-  seed.y = nodeID^baseSeed;
-  seed.z = get_global_id(1)^baseSeed;
-  seed.w = baseSeed;
-  */
-
-  /** 
-   * \todo better int32-to-float32 conversion
-  */
-  for (int i=0; i<featDim; i+=4)
-  {
-    seed = md5Rand(seed);
-
-    // The first 8 work-items of each work-group copy the upper/lower feature bounds
-    // to shared in order to avoid multiple reads from global memory
-    int gtThrID = min(4, ((int)featDim)-i);
-    if (!get_local_id(0)&&get_local_id(1)<gtThrID*2)
-    {
-      tmp[get_local_id(1)] = \
-	(get_local_id(1)<gtThrID) ? featLowBounds[i+get_local_id(1)] : featUpBounds[i+get_local_id(1)-gtThrID];
-    }
-    barrier(CLK_LOCAL_MEM_FENCE);
-    
-
-    /** \todo  Find another way the uint32-to-float conversion since uncorrect results get
-     are returned by old fglrx driver versions (e.g. default Ubuntu 14.04 version) */
-    feat = tmp[0] + 
-      (feat_t)(((float)(seed.x))/(0xFFFFFFFF)*(tmp[gtThrID]-tmp[0]));
-    ACCESS_FEATURE(featuresBuff, i, featDim) = feat;
-    if ((i+1)>=featDim) break;
-    
-    feat = tmp[1] + 
-      (feat_t)(((float)seed.y)/(0xFFFFFFFF)*(tmp[gtThrID+1]-tmp[1]));
-    ACCESS_FEATURE(featuresBuff, i+1, featDim) = feat;
-    if ((i+2)>=featDim) break;
-    
-    feat = tmp[2] +
-      (feat_t)(((float)seed.z)/(0xFFFFFFFF)*(tmp[gtThrID+2]-tmp[2]));
-    ACCESS_FEATURE(featuresBuff, i+2, featDim) = feat;
-    if ((i+3)>=featDim) break;
-
-    feat = tmp[3] +
-      (feat_t)(((float)seed.w)/(0xFFFFFFFF)*(tmp[gtThrID+3]-tmp[3]));
-    ACCESS_FEATURE(featuresBuff, i+3, featDim) = feat;
-
-    barrier(CLK_LOCAL_MEM_FENCE);
-  }
-
-  // Perform computation on image samples only if they reach the current slice of
-  // trained leaves
-  if (nodeID>=startNode && nodeID<=endNode)
-  {
-    feat = computeFeature(image, nChannels, width, height, coords,
-			  treeLeftChildren, treePosteriors, nodesID,
-			  featuresBuff, featDim);
-  
-    /** \todo speed up threshold sampling by sampling 4 thresholds at a time */
-    seed.x = treeID;
-    seed.y = read_imagei(nodesID, sampler, coords).x;
-    seed.z = get_global_id(1);
-    seed.w = 1;
-    perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
-        
-    for (uint t=0; t<nThresholds;)
-    { 
-      seed = md5Rand(seed);
-
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.x)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.y)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-    
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.z)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-      
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.w)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-    }
-    
-  }
-}
-
-
-/** \todo: remove unused arguments */
-__kernel void computePerImageHistogramWithLUT(__read_only image_t image,
-					      uint nChannels, uint width, uint height,
-					      __read_only image2d_t labels,
-					      __read_only image2d_t nodesID,
-					      __global uint *samples, uint nSamples,
-					     uint featDim,
-					      __global feat_t *featLowBounds, __global feat_t *featUpBounds,
-					      uint nThresholds, feat_t thrLowBound, feat_t thrUpBound,
-					      __global uchar *perImageHistogram,
-					      uint treeID, int startNode, int endNode,
-					     __global int *treeLeftChildren,
-					      __global float *treePosteriors,
-					      __local feat_t *tmp,
-					      __local feat_t *featuresBuff,
-					      __global feat_t *lut, uint lutSize)
-                                              //,uint baseSeed)
-{
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-  uint4 seed;
-  feat_t feat, thr;
-  int2 coords;
-  int nodeID;
-
-  coords.x = samples[get_global_id(0)];
-  coords = (int2)(coords.x%width, coords.x/width);
-  nodeID = read_imagei(nodesID, sampler, coords).x;
-
-  seed.x = treeID;
-  seed.y = nodeID;
-  seed.z = get_global_id(1);
-  seed.w = 0; // Non zero value for 4th int???
-
-  /*
-  seed.x = treeID^baseSeed;
-  seed.y = nodeID^baseSeed;
-  seed.z = get_global_id(1)^baseSeed;
-  seed.w = baseSeed;
-  */
-
-  /** \todo: avoid waste of resource: only one int32 out of four is used. */
-  seed = md5Rand(seed);
-
-  /** 
-   * \todo better int32-to-float32 conversion
-  */
-  int idx = round((float)seed.x/0xFFFFFFFF * lutSize)*featDim;
-
-  for (int i=0; i<featDim; i++)
-  {
-    ACCESS_FEATURE(featuresBuff, i, featDim) = lut[idx+i];
-  }
-
-  // Perform computation on image samples only if they reach the current slice of
-  // trained leaves
-  if (nodeID>=startNode && nodeID<=endNode)
-  {
-
-    //offset = (get_global_id(0)*get_global_size(1)+get_global_id(1))*featDim;
-    feat = computeFeature(image, nChannels, width, height, coords,
-			  treeLeftChildren, treePosteriors, nodesID,
-			  featuresBuff, featDim);
-  
-    /** \todo speed up threshold sampling by sampling 4 thresholds at a time */
-    seed.x = treeID;
-    seed.y = read_imagei(nodesID, sampler, coords).x;
-    seed.z = get_global_id(1);
-    seed.w = 1;
-    perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
-    
-    for (uint t=0; t<nThresholds;)
-    { 
-      seed = md5Rand(seed);
-
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.x)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.y)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-    
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.z)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-      
-      thr = thrLowBound + 
-	(feat_t)(((float)seed.w)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-    }
-    
-  }
-}
-
 
 uint4 md5Rand(uint4 seed);
 __kernel void computePerImageHistogram(__read_only image_t image,
@@ -286,7 +49,8 @@ __kernel void computePerImageHistogram(__read_only image_t image,
 				       __global feat_t *featLut, uint featLutSize,
 				       __global feat_t *thrLut, uint thrLutSize,
 				       __local feat_t *tmp,
-				       __local feat_t *featuresBuff)
+				       __local feat_t *featuresBuff,
+                                       uint nFeatLutSamples)
                                        //,uint baseSeed)
 {
   const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
@@ -313,17 +77,42 @@ __kernel void computePerImageHistogram(__read_only image_t image,
 
   if (featLutSize)
   {
-    /** \todo: avoid waste of resource: only one int32 out of four is used. */
-    seed = md5Rand(seed);
-
-    /** 
-     * \todo better int32-to-float32 conversion
-     */
-    int idx = floor((float)seed.x/0xFFFFFFFF * featLutSize)*featDim;
-
-    for (int i=0; i<featDim; i++)
+    int idx, lutEntrySize=featDim/nFeatLutSamples;
+    for (int n=0; n<nFeatLutSamples;)
     {
-      ACCESS_FEATURE(featuresBuff, i, featDim) = featLut[idx+i];
+      /** \todo: avoid waste of resource: only one int32 out of four is used. */
+      seed = md5Rand(seed);
+
+      /** 
+       * \todo better int32-to-float32 conversion
+       */
+      idx = floor((float)seed.x/0xFFFFFFFF * featLutSize)*lutEntrySize;
+      for (int i=0; i<lutEntrySize; i++)
+      {
+	ACCESS_FEATURE(featuresBuff, n*lutEntrySize+i, featDim) = featLut[idx+i];
+      }
+      if ((++n)>=nFeatLutSamples) break;
+      
+      idx = floor((float)seed.y/0xFFFFFFFF * featLutSize)*lutEntrySize;
+      for (int i=0; i<lutEntrySize; i++)
+      {
+	ACCESS_FEATURE(featuresBuff, n*lutEntrySize+i, featDim) = featLut[idx+i];
+      }
+      if ((++n)>=nFeatLutSamples) break;
+
+      idx = floor((float)seed.z/0xFFFFFFFF * featLutSize)*lutEntrySize;
+      for (int i=0; i<lutEntrySize; i++)
+      {
+	ACCESS_FEATURE(featuresBuff, n*lutEntrySize+i, featDim) = featLut[idx+i];
+      }
+      if ((++n)>=nFeatLutSamples) break;
+
+      idx = floor((float)seed.w/0xFFFFFFFF * featLutSize)*lutEntrySize;
+      for (int i=0; i<lutEntrySize; i++)
+      {
+	ACCESS_FEATURE(featuresBuff, n*lutEntrySize+i, featDim) = featLut[idx+i];
+      }
+      ++n;
     }
   }
 

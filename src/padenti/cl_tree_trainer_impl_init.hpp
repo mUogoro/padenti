@@ -215,7 +215,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   // Note:
   // - 4D Historam (sample-ID, feature, class, threshold) can be compressed to 3D since we can access
   //   the sample class from labels image
-  size_t perImgHistogramSize = m_maxTsImgSamples*params.nFeatures*params.nThresholds;
+  size_t perImgHistogramSize = m_maxTsImgSamples*params.nFeatures*params.nThresholds/8;
   m_clPerImgHistBuff1 = cl::Buffer(m_clContext,
 				   CL_MEM_WRITE_ONLY,
 				   perImgHistogramSize*sizeof(cl_uchar));

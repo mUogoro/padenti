@@ -112,7 +112,7 @@ void Tree<FeatType, FeatDim, nClasses>::load(const std::string &treePath,
   }
   unsigned int currDepth = pt.get<unsigned int>("Trees.MaxDepth");
 
-  if (!m_depth || m_depth!=currDepth)
+  if (!m_depth || m_depth<currDepth)
   {
     _clean();
 
@@ -120,7 +120,8 @@ void Tree<FeatType, FeatDim, nClasses>::load(const std::string &treePath,
     _init();
   }
 
-  for (unsigned int i=0; i<((2<<(m_depth-1))-1); i++)
+  //for (unsigned int i=0; i<((2<<(m_depth-1))-1); i++)
+  for (unsigned int i=0; i<((2<<(currDepth-1))-1); i++)
   {
     std::stringstream nodeStream;
     const TreeNode<FeatType, FeatDim> &currNode = getNode(i);

@@ -78,11 +78,6 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
     m_clThrLutBuff = cl::Buffer(m_clContext, CL_MEM_READ_ONLY, sizeof(FeatType));
   }
 
-  // Init per-node total and per-class number of samples
-  m_perNodeTotSamples = new unsigned int[nNodes];
-  m_perClassTotSamples = new unsigned int[nNodes*nClasses];
-  std::fill_n(m_perNodeTotSamples, nNodes, 0);
-  std::fill_n(m_perClassTotSamples, nNodes*nClasses, 0);
 
   // Init to-skip flags for training set images
   m_toSkipTsImg = new bool[trainingSet.getImages().size()];
@@ -95,7 +90,6 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   m_maxTsImgWidth=0;
   m_maxTsImgHeight=0;
   m_maxTsImgSamples=0;
-  m_perNodeTotSamples[0] = 0;
   const std::vector<TrainingSetImage<ImgType, nChannels> > &tsImages = trainingSet.getImages();
   for (typename std::vector<TrainingSetImage<ImgType, nChannels> >::const_iterator it=tsImages.begin();
        it!=tsImages.end(); ++it)
@@ -107,9 +101,6 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
 
     // Get maximum number of sampled pixels as well
     if (currImage.getNSamples()>m_maxTsImgSamples) m_maxTsImgSamples=currImage.getNSamples();
-
-    /** \todo update here total number of pixel per class at root node */
-    m_perNodeTotSamples[0]+=currImage.getNSamples();
   }
 
   // Make the maximum width and height a multiple of the, respectively, work-group x and y
@@ -342,6 +333,12 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   }
 
 
+  // Init per-node total and per-class number of samples
+  m_perNodeTotSamples = new unsigned int[nNodes];
+  m_perClassTotSamples = new unsigned int[nNodes*nClasses];
+  _initPerNodeCounters(tree, trainingSet, params, startDepth, endDepth);
+
+
   // Finally, init the random seed for features and thresholds sampling
   /*
   boost::random::mt19937 gen;
@@ -437,4 +434,128 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_cleanTrain
   }
   delete []m_histogram;
   delete []m_frontier;
+}
+
+
+template <typename ImgType, unsigned int nChannels, typename FeatType, unsigned int FeatDim,
+	  unsigned int nClasses>
+void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initPerNodeCounters(
+  Tree<FeatType, FeatDim, nClasses> &tree,
+  const TrainingSet<ImgType, nChannels> &trainingSet,
+  const TreeTrainerParameters<FeatType, FeatDim> &params,
+  unsigned int startDepth, unsigned int endDepth)
+{
+  unsigned int nNodes = (2<<(endDepth-1))-1;
+
+  std::fill_n(m_perNodeTotSamples, nNodes, 0);
+  std::fill_n(m_perClassTotSamples, nNodes*nClasses, 0);
+
+  /** \todo flat to-skip images here */
+  const std::vector<TrainingSetImage<ImgType, nChannels> > &tsImages = trainingSet.getImages();
+  for (typename std::vector<TrainingSetImage<ImgType, nChannels> >::const_iterator it=tsImages.begin();
+       it!=tsImages.end(); ++it)
+  {
+    const TrainingSetImage<ImgType, nChannels> &currImage=*it;
+    
+    if (startDepth==1)
+    {
+      for (unsigned int s=0; s<currImage.getNSamples();	 s++)
+      {
+	unsigned int id = currImage.getSamples()[s];
+	unsigned int label = (unsigned int)currImage.getLabels()[id]-1;
+	m_perClassTotSamples[label]++;
+      }
+
+      m_perNodeTotSamples[0]+=currImage.getNSamples();
+    }
+    else
+    {
+      /** \todo A lot o redundant code from _impl_traverse. Move it within a function */
+
+      int fillWidth, fillHeight;
+      cl::size_t<3> origin, region;
+      cl_int4 zeroColor = {0, 0, 0, 0};
+      origin[0]=0; origin[1]=0, origin[2]=0;
+
+      fillWidth = (currImage.getWidth()%WG_PREDICT_WIDTH) ? 
+	WG_PREDICT_WIDTH-(currImage.getWidth()%WG_PREDICT_WIDTH) : 0;
+      fillHeight = (currImage.getHeight()%WG_PREDICT_HEIGHT) ?
+	WG_PREDICT_HEIGHT-(currImage.getHeight()%WG_PREDICT_HEIGHT) : 0;
+      region[0]=m_maxTsImgWidth; region[1]=m_maxTsImgHeight; region[2]=1;
+
+      m_clQueue1.enqueueFillImage(m_clTsNodesIDImg1, zeroColor, origin, region);
+
+      // Note: if the current image is smaller than the previous one, part of the previous image
+      // is accessible since not overwritten by current image
+      /** \todo zero filling of images */
+      region[0]=currImage.getWidth(); region[1]=currImage.getHeight();
+      region[2] = (nChannels<=4) ? 1 : nChannels;
+      std::copy(currImage.getData(), currImage.getData()+region[0]*region[1]*nChannels,
+		m_clTsImgPinnPtr);
+      if (nChannels<=4)
+      {
+	m_clQueue1.enqueueWriteImage(*reinterpret_cast<cl::Image2D*>(m_clTsImg1), CL_FALSE,
+				     origin, region, 0, 0,
+				     (void*)(m_clTsImgPinnPtr));
+      }
+      else
+      {
+	m_clQueue1.enqueueWriteImage(*reinterpret_cast<cl::Image3D*>(m_clTsImg1), CL_FALSE,
+				     origin, region, 0, 0,
+				     (void*)(m_clTsImgPinnPtr));
+      }
+
+      region[2] = 1;
+      std::copy(currImage.getLabels(), currImage.getLabels()+region[0]*region[1],
+		m_clTsLabelsImgPinnPtr);
+      m_clQueue1.enqueueWriteImage(m_clTsLabelsImg1, CL_FALSE,
+				   origin, region, 0, 0,
+				   (void*)(m_clTsLabelsImgPinnPtr));
+      std::copy(currImage.getSamples(), currImage.getSamples()+currImage.getNSamples(),
+		m_clTsSamplesBuffPinnPtr);
+      m_clQueue1.enqueueWriteBuffer(m_clTsSamplesBuff1, CL_FALSE,
+				    0, currImage.getNSamples()*sizeof(cl_uint),
+				    (void*)(m_clTsSamplesBuffPinnPtr));
+    
+      // Per-image prediction (i.e. compute samples end nodes)
+      if (nChannels<=4)
+      {
+	m_clPredictKern.setArg(0, *reinterpret_cast<cl::Image2D*>(m_clTsImg1));
+      }
+      else
+      {
+	m_clPredictKern.setArg(0, *reinterpret_cast<cl::Image3D*>(m_clTsImg1));
+      }
+      m_clPredictKern.setArg(1, m_clTsLabelsImg1);
+      m_clPredictKern.setArg(3, currImage.getWidth());
+      m_clPredictKern.setArg(4, currImage.getHeight());
+      m_clPredictKern.setArg(10, m_clTsNodesIDImg1);
+      m_clPredictKern.setArg(11, m_clPredictImg1);
+      
+      for (unsigned int d=0; d<startDepth-1; d++)
+      {
+	m_clQueue1.enqueueNDRangeKernel(m_clPredictKern,
+					cl::NullRange,
+					cl::NDRange(currImage.getWidth()+fillWidth,
+						    currImage.getHeight()+fillHeight),
+					cl::NDRange(WG_PREDICT_WIDTH, WG_PREDICT_HEIGHT));
+	m_clQueue1.enqueueCopyImage(m_clPredictImg1, m_clTsNodesIDImg1,
+				    origin, origin, region);
+      }
+
+      m_clQueue1.enqueueReadImage(m_clTsNodesIDImg1, CL_TRUE,
+				  origin, region, 0, 0,
+				  (void*)(m_clTsNodesIDImgPinnPtr));
+
+      for (unsigned int s=0; s<currImage.getNSamples();	 s++)
+      {
+	unsigned int id = currImage.getSamples()[s];
+	unsigned int label = (unsigned int)currImage.getLabels()[id]-1;
+	int nodeID = m_clTsNodesIDImgPinnPtr[id];
+
+	m_perClassTotSamples[nodeID*nClasses+label]++;
+	m_perNodeTotSamples[nodeID]++;
+      }
+    }
+  }
 }

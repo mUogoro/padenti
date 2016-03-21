@@ -527,7 +527,7 @@ void *_updateGlobalHistogram(void *_data)
       unsigned int label = (unsigned int)currImage.getLabels()[id]-1;
 
       // \todo move inside init 
-      if (currDepth==1) perClassTotSamples[nodeID*nClasses+label]++;
+      //if (currDepth==1) perClassTotSamples[nodeID*nClasses+label]++;
 
       // If the current sample ends up in a node that belongs to a less deep level, skip it
       // \todo Sampe skipping criteria inside per-image histogram update kernel?

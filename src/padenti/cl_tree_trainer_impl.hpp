@@ -188,7 +188,7 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::train(
   unsigned int startDepth, unsigned int endDepth)
 {
   /** \todo support a starting depth different from 1 */
-  if (startDepth!=1) throw "Starting depth must be equal to 1";
+  if (startDepth<1) throw "Starting depth must greater than or equal to 1";
 
   _initTrain(tree, trainingSet, params, startDepth, endDepth);
   

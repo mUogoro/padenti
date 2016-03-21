@@ -103,6 +103,10 @@ private:
 		  const TrainingSet<ImgType, nChannels> &trainingSet,
 		  const TreeTrainerParameters<FeatType, FeatDim> &params,
 		  unsigned int startDepth, unsigned int endDepth);
+  void _initPerNodeCounters(Tree<FeatType, FeatDim, nClasses> &tree,
+			    const TrainingSet<ImgType, nChannels> &trainingSet,
+			    const TreeTrainerParameters<FeatType, FeatDim> &params,
+			    unsigned int startDepth, unsigned int endDepth);
   unsigned int _initFrontier(Tree<FeatType, FeatDim, nClasses> &tree,
 			     const TreeTrainerParameters<FeatType, FeatDim> &params, unsigned int currDepth);
   unsigned int _initHistogram(const TreeTrainerParameters<FeatType, FeatDim> &params);

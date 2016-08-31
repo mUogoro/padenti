@@ -16,22 +16,35 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 ###############################################################################
+#
+# Padenti Library CMake configuration file
+#
+# Usage:
+#
+#	find_package(Padenti REQUIRED)
+#   include_directories(${PADENTI_INCLUDE_DIRS})
+#   link_directories(${PADENTI_LIBRARY_DIRS})
+#   target_link_libraries(MY_TARGET ${PADENTI_LIBRARIES})
+#
+# Exported variables:
+#
+#   - PADENTI_FOUND : defined if the library has been found   
+#   - PADENTI_INCLUDE_DIRS : the list of directories containing included headers
+#   - PADENTI_LIBRARY_DIRS : the list of directories containing libraries
+#   - PADENTI_LIBRARIES : the list of libraries to link against
+#
 
 set(Padenti_VERSION_MAJOR @Padenti_VERSION_MAJOR@)
 set(Padenti_VERSION_MINOR @Padenti_VERSION_MINOR@)
 
-find_package(OpenCV REQUIRED)
 add_definitions(-DBOOST_ALL_DYN_LINK)
-find_package(Boost COMPONENTS random filesystem system chrono log REQUIRED)
+if (WIN32)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp /arch:SSE2")
+else (WIN32)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -march=native")
+endif (WIN32)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -march=native")
-
-set(Padenti_INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}
-                         @Padenti_INSTALL_DIR@/include
-                         @Padenti_INSTALL_DIR@/include/padenti
-			 @Padenti_INSTALL_DIR@/include/padenti/kernels
-			 @Padenti_OPENCL_INCLUDE_DIR@)
-set(Padenti_LIBRARY_DIRS ${OpenCV_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS}
-                         @Padenti_INSTALL_DIR@/lib)
-
-set(Padenti_LIBRARIES ${OpenCV_LIBS} ${Boost_RANDOM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_CHRONO_LIBRARY} ${Boost_LOG_LIBRARY} OpenCL)
+set(PADENTI_FOUND "True")
+set(PADENTI_INCLUDE_DIRS "@Padenti_EXT_INCLUDE_DIRS@;@Padenti_INSTALL_DIR@/include")
+set(PADENTI_LIBRARY_DIRS "@Padenti_EXT_LIBRARY_DIRS@")
+set(PADENTI_LIBRARIES "@Padenti_EXT_LIBRARIES@")

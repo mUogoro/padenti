@@ -44,7 +44,7 @@
   - support of arbitrary image pixel type and number of channels
   - support of arbitrary per-pixel features through a custom OpenCL C function
   
-  "Padenti" is the word in Sardinian language (in its variant of the Mogoro village) for "Forest".
+  "Padenti" stands for "Forest" in Sardinian language (in its variant of the Mogoro village).
 
   For installation, usage and a small tutorial please consult the following sections:
   - \subpage installation Installation and Usage
@@ -56,43 +56,49 @@
   \page installation Installation
   
   \section deps Dependencies
-  - A GNU Linux system
+  - A GNU Linux or Windows system
   - An OpenCL environment from either Nvidia or AMD
   - A CPU with SS2 instructions support
-  - OpenCV 
+  - OpenCV (components highgui and imgproc) 
   - Boost (components random, filesystem, chrono and log)
-  - cmake (for compilation and installation)
+  - cmake 3.1 (for compilation and installation)
   - Doxygen (for documentation generation)
+  - <a href="https://www.sourceware.org/pthreads-win32/">pthread-win32</a> (Windows only)
+  - <a href="https://www.cygwin.com/">cygwin</a> (xxd Windows port needed for compilation).
 
   \section inst Compiling and installing the library
+  On Linux
   \code{.sh}
 git clone https://github.com/mUogoro/padenti.git padenti
 cd padenti
 mkdir build && cd build
-# The flag -DNVIDIA=True is mandatory for Nvidia OpenCL implementation support
-cmake -DNVIDIA=True ..
+cmake ..
 make && make doc && make install
   \endcode
-
+  On Windows, open the generated solution file in Visual Studio. 
+  
+  \note
+  The cmake building configuration must match the Visual Studio one (i.e. either Debug or Release for both).
+  
   \section usage Usage
   A PadentiConfig.cmake file is installed together with the library and it can be used to
   import the library into new projects
 
   \code{.sh}
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.1)
 project (NewProject)
 
 find_package(Padenti REQUIRED)
 
 ...
 
-include_directories($Padenti_INCLUDE_DIRS)
-link_directories($Padenti_LIBRARIES_DIR)
+include_directories($PADENTI_INCLUDE_DIRS)
+link_directories($PADENTI_LIBRARIES_DIR)
 
 ...
 
 add_executable(test test.cpp)
-target_link_libraries(test $Padenti_LIBRARIES)
+target_link_libraries(test $PADENTI_LIBRARIES)
   \endcode
 
   Please note that all the required library dependencies (i.e. OpenCV and Boost modules)
@@ -100,11 +106,11 @@ target_link_libraries(test $Padenti_LIBRARIES)
 
   \section platform Tested platforms
   Padenti has been developed and tested on the following configuration:
-  - Ubuntu Linux 14.04LTS
-  - gcc 4.8
-  - NVIDIA CUDA SDK 7.0 (driver version 346.82)
+  - Ubuntu Linux 14.04LTS, Windows 8.1 Pro
+  - gcc 4.8, Visual Studio 2013
+  - NVIDIA CUDA SDK 7.5 (driver version 352)
   - AMD OpenCL (driver version 14.12)
-  - tested GPUs: Nvidia GTX670, AMD R9280X, Nvidia 650M
+  - tested GPUs: Nvidia 650M/GTX670/GTX770/TitanX, AMD R9280X
  */
 
 /*!
@@ -118,7 +124,8 @@ target_link_libraries(test $Padenti_LIBRARIES)
   the camera sensor at that specific pixel location. In this tutorial we are going to use the
   NYU Hand pose dataset and, more specifically, its subset provided for hand segmentation.
   The dataset can be downloaded at the following
-  <a href="http://cims.nyu.edu/~tompson/NYU_Hand_Pose_Dataset.htm#download">link</a>.
+  <a href="http://cims.nyu.edu/~tompson/NYU_Hand_Pose_Dataset.htm#download">link</a>
+  (<a href="https://drive.google.com/open?id=0B_ILMW63e765TFJDQm0yQTRHcFE">mirror</a>).
 
   Before being used, the dataset must converted in a format compatible with the Padenti
   library. For this purpose, we can use the process_dataset.py python script shipped with
@@ -133,6 +140,10 @@ target_link_libraries(test $Padenti_LIBRARIES)
   the processed dataset destination path. After the script execution ends, OUT_PATH contains
   two folders (train and test) where the processed images of the
   training set and the test set are stored.
+  
+  \note
+  The script above requires the numpy and OpenCV2 python wrappers to be installed. The Windows
+  installers can be found <a href="http://www.lfd.uci.edu/~gohlke/pythonlibs">here</a>
 
   For each image of the original dataset, two new images are generated: a 16bit single channel
   image <IMAGE>_depth.png containing the depth values, and a RGB image representing the

@@ -26,12 +26,11 @@
 #include <padenti/tree.hpp>
 #include <padenti/cl_tree_trainer.hpp>
 
-
-#define TREE_DEPTH (5)
-#define TRAIN_DEPTH (5)
-#define N_SAMPLES (2048)
-#define N_FEATURES (2048)
-#define N_THRESHOLDS (20)
+#define TREE_DEPTH (15)
+#define TRAIN_DEPTH (15)
+#define N_SAMPLES (1024)
+#define N_FEATURES (1024)
+#define N_THRESHOLDS (10)
 
 #define USE_CPU (false)
 

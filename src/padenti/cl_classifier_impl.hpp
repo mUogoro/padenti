@@ -17,6 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 
+#ifdef WIN32
+#include <cstdlib>
+#endif // WIN32
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -54,8 +57,14 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLClassifier(
   m_clPredictProg = cl::Program(m_clContext, clPredictSrc);
 
   // Generic feature trick
-  /** \todo Store feature type typedef file in a platform indipendent path */
+#ifdef WIN32
+  char *tmpPath = getenv("Temp");
+  std::stringstream clFeatTypeFilePathSS;
+  clFeatTypeFilePathSS << tmpPath << "\\feat_type.cl";
+  std::ofstream clFeatTypeFile(clFeatTypeFilePathSS.str().c_str());
+#else
   std::ofstream clFeatTypeFile("/tmp/feat_type.cl");
+#endif // WIN32
   std::string code;
   FeatTypeTrait<FeatType>::getCLTypedefCode(code);
   clFeatTypeFile.write(code.c_str(), code.length());
@@ -64,7 +73,13 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLClassifier(
   // General image type trick:
   // - if the image contains up to 4 channel, work with image2d_t;
   // - if the image has more than 4 channel, work with 3D images (i.e. image3d_t)
+#ifdef WIN32
+  std::stringstream clImgTypeFilePathSS;
+  clImgTypeFilePathSS << tmpPath << "\\image_type.cl";
+  std::ofstream clImgTypeFile(clImgTypeFilePathSS.str().c_str());
+#else
   std::ofstream clImgTypeFile("/tmp/image_type.cl");
+#endif // WIN32
   std::string imgTypedefCodeHeader("#ifndef __IMG_TYPE\n#define __IMG_TYPE\n\n");
   std::string imgTypedefCode((nChannels<=4) ?
 			     "typedef image2d_t image_t;\n" : 
@@ -76,7 +91,11 @@ CLClassifier<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLClassifier(
   clImgTypeFile.close();
 
   std::stringstream opts;
+#ifdef WIN32
+  opts << "-I" << tmpPath << " -I" << featureKernelPath;
+#else
   opts << "-I/tmp -Ikernels -I" << featureKernelPath;
+#endif // WIN32
   
   try
   {

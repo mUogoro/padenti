@@ -699,5 +699,6 @@ void *_updateGlobalHistogram(void *_data)
   BOOST_LOG_TRIVIAL(info) << "Total global histogram update time: " << totGlobHistUpdateSeconds.count()
                           //<< " seconds (avg: " << totGlobHistUpdateSeconds.count()/tsImages.size()
 			  << " seconds)";
-  
+
+  return NULL;
 }

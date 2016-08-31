@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 {
   // Init the classifier
   const int nTrees = argc-1;
-  TreeT trees[nTrees];
+  TreeT *trees = new TreeT[nTrees];
   ClassifierT classifier("kernels", USE_CPU);
 
   // Load the trees
@@ -88,5 +88,7 @@ int main(int argc, char *argv[])
   cv::waitKey(0);
   cv::destroyAllWindows();
 
+  delete[]trees;
+  
   return 0;
 }

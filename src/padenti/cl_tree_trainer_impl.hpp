@@ -17,6 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ******************************************************************************/
 
+#ifdef WIN32
+#include <cstdlib>
+#endif // WIN32
 #include <iostream>
 #include <climits>
 #include <cmath>
@@ -44,7 +47,7 @@
 // Note: maximum allowed global (i.e. per-depth) histogram size, currently set to 8GB (2^30 unsigned int)
 /** \todo parameterize, e.g. using a documented "internal parameters" argument */
 //#define GLOBAL_HISTOGRAM_MAX_SIZE (24lu*(2<<29))
-#define GLOBAL_HISTOGRAM_MAX_SIZE (20lu*(2<<29))
+#define GLOBAL_HISTOGRAM_MAX_SIZE (20llu*(2<<29))
 
 /** \todo "automagically" compute this value or parameterize it */
 #define PER_THREAD_FEAT_THR_PAIRS (64)
@@ -107,8 +110,14 @@ CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLTreeTrainer(co
   // C feature type. Use type-traits to retrieve the typedef code and save it on a temporary
   // file included by other OpenCL source.
   // Note: only standard types are supported
-  /** \todo Store feature type file file in a platform indipendent path */
+#ifdef WIN32
+  char *tmpPath = getenv("Temp");
+  std::stringstream clFeatTypeFilePathSS;
+  clFeatTypeFilePathSS << tmpPath << "\\feat_type.cl";
+  std::ofstream clFeatTypeFile(clFeatTypeFilePathSS.str().c_str());
+#else
   std::ofstream clFeatTypeFile("/tmp/feat_type.cl");
+#endif // WIN32
   std::string featTypedefCode;
   FeatTypeTrait<FeatType>::getCLTypedefCode(featTypedefCode);
   clFeatTypeFile.write(featTypedefCode.c_str(), featTypedefCode.length());
@@ -117,7 +126,13 @@ CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLTreeTrainer(co
   // Do the same for the image type:
   // - if the image contains up to 4 channel, work with image2d_t;
   // - if the image has more than 4 channel, work with 3D images (i.e. image3d_t)
+#ifdef WIN32
+  std::stringstream clImgTypeFilePathSS;
+  clImgTypeFilePathSS << tmpPath << "\\image_type.cl";
+  std::ofstream clImgTypeFile(clImgTypeFilePathSS.str().c_str());
+#else
   std::ofstream clImgTypeFile("/tmp/image_type.cl");
+#endif // WIN32
   std::string imgTypedefCodeHeader("#ifndef __IMG_TYPE\n#define __IMG_TYPE\n\n");
   std::string imgTypedefCode((nChannels<=4) ?
 			     "typedef image2d_t image_t;\n" : 
@@ -131,7 +146,11 @@ CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::CLTreeTrainer(co
   /** \todo better error handling */
   std::stringstream opts;
   //opts << "-I/tmp -Ikernels -I" << featureKernelPath;
+#ifdef WIN32
+  opts << "-I" << tmpPath << " -I" << featureKernelPath;
+#else
   opts << "-I/tmp -I" << featureKernelPath;
+#endif // WIN32
 
   try
   {

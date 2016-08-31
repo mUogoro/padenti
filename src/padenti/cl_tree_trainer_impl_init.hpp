@@ -295,7 +295,8 @@ void CLTreeTrainer<ImgType, nChannels, FeatType, FeatDim, nClasses>::_initTrain(
   // is limited by the smaller between maxFrontierSize and
   // GLOBAL_HISTOGRAM_MAX_SIZE/perNodeHistogramSize
   m_histogramSize = std::min(maxFrontierSize,
-			     (size_t)floorl((double)GLOBAL_HISTOGRAM_MAX_SIZE/(perNodeHistogramSize*sizeof(unsigned int))));
+			                (size_t)floorl((long double)GLOBAL_HISTOGRAM_MAX_SIZE/
+							               (perNodeHistogramSize*sizeof(unsigned int))));
   m_histogram = new unsigned int*[m_histogramSize];
   for (int i=0; i<m_histogramSize; i++) m_histogram[i] = new unsigned int[perNodeHistogramSize];
 

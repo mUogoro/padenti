@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">Padenti
-   &#160;<span id="projectnumber">0.1</span>
+   &#160;<span id="projectnumber">0.2</span>
    </div>
    <div id="projectbrief">An OpenCL-accelerated Random Forests implementation for Computer Vision applications using local features</div>
   </td>
@@ -103,10 +103,9 @@ Inheritance diagram for CLClassifier&lt; ImgType, nChannels, FeatType, FeatDim, 
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a5a29dbdd778ea7c56cdba2fe6e326c43"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_c_l_classifier.html#a5a29dbdd778ea7c56cdba2fe6e326c43">CLClassifier</a> (const std::string &amp;featureKernelPath, bool useCPU=false)</td></tr>
+<tr class="memitem:a5a29dbdd778ea7c56cdba2fe6e326c43"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5a29dbdd778ea7c56cdba2fe6e326c43"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>CLClassifier</b> (const std::string &amp;featureKernelPath, bool useCPU=false)</td></tr>
 <tr class="separator:a5a29dbdd778ea7c56cdba2fe6e326c43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ce2152481e14e3c22443534681e0e1d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_c_l_classifier.html#a0ce2152481e14e3c22443534681e0e1d">~CLClassifier</a> ()</td></tr>
-<tr class="separator:a0ce2152481e14e3c22443534681e0e1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a210a3f05661188f1529d3643735433e2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a210a3f05661188f1529d3643735433e2"></a>
 <a class="el" href="class_c_l_classifier.html">CLClassifier</a>&lt; ImgType, <br class="typebreak"/>
 nChannels, FeatType, FeatDim, <br class="typebreak"/>
@@ -121,54 +120,6 @@ nClasses &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operat
 <tr class="memitem:a47ab1585f084cb77cbeca28d81beccc3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_c_l_classifier.html#a47ab1585f084cb77cbeca28d81beccc3">predict</a> (const <a class="el" href="class_image.html">Image</a>&lt; ImgType, nChannels &gt; &amp;image, <a class="el" href="class_image.html">Image</a>&lt; float, nClasses &gt; &amp;prediction, <a class="el" href="class_image.html">Image</a>&lt; unsigned char, 1 &gt; &amp;mask)</td></tr>
 <tr class="separator:a47ab1585f084cb77cbeca28d81beccc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a5a29dbdd778ea7c56cdba2fe6e326c43"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename ImgType , unsigned int nChannels, typename FeatType , unsigned int FeatDim, unsigned int nClasses&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="class_c_l_classifier.html">CLClassifier</a>&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::<a class="el" href="class_c_l_classifier.html">CLClassifier</a> </td>
-          <td>(</td>
-          <td class="paramtype">const std::string &amp;&#160;</td>
-          <td class="paramname"><em>featureKernelPath</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>useCPU</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000001">Todo:</a></b></dt><dd>Store feature type typedef file in a platform indipendent path </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a0ce2152481e14e3c22443534681e0e1d"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename ImgType , unsigned int nChannels, typename FeatType , unsigned int FeatDim, unsigned int nClasses&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="class_c_l_classifier.html">CLClassifier</a>&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::~<a class="el" href="class_c_l_classifier.html">CLClassifier</a> </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000002">Todo:</a></b></dt><dd>Possible optimization: init OpenCL image once and keep them while the input image size does not change </dd></dl>
-
-</div>
-</div>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a53ee6d699f47c0ea30eda0aae932617b"></a>
 <div class="memitem">
@@ -377,20 +328,20 @@ template&lt;typename ImgType , unsigned int nChannels, typename FeatType , unsig
   </table>
   </dd>
 </dl>
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000003">Todo:</a></b></dt><dd>Optimize with intrinsics </dd></dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000001">Todo:</a></b></dt><dd>Optimize with intrinsics </dd></dl>
 
 <p>Implements <a class="el" href="class_classifier.html#a172113539093bacf3f2b20a420753d60">Classifier&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>/home/daniele/Desktop/padenti/src/padenti/<a class="el" href="cl__classifier_8hpp_source.html">cl_classifier.hpp</a></li>
-<li>/home/daniele/Desktop/padenti/src/padenti/<a class="el" href="cl__classifier__impl_8hpp_source.html">cl_classifier_impl.hpp</a></li>
+<li>/home/daniele/ieiit/workspace/padenti/src/padenti/<a class="el" href="cl__classifier_8hpp_source.html">cl_classifier.hpp</a></li>
+<li>/home/daniele/ieiit/workspace/padenti/src/padenti/<a class="el" href="cl__classifier__impl_8hpp_source.html">cl_classifier_impl.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 11 2015 12:25:29 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 31 2016 14:25:15 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

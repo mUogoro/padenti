@@ -1,6 +1,7 @@
 var searchData=
 [
   ['classifier',['Classifier',['../class_classifier.html',1,'']]],
+  ['classweightedimagesampler',['ClassWeightedImageSampler',['../class_class_weighted_image_sampler.html',1,'']]],
   ['clclassifier',['CLClassifier',['../class_c_l_classifier.html',1,'']]],
   ['cltreetrainer',['CLTreeTrainer',['../class_c_l_tree_trainer.html',1,'']]],
   ['consumerproducerdata',['ConsumerProducerData',['../struct_consumer_producer_data.html',1,'']]],

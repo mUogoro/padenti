@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>Padenti: ImageSampler&lt; type, nChannels &gt; Class Template Reference</title>
+<title>Padenti: ClassWeightedImageSampler&lt; type, nChannels &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -86,113 +86,57 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pro-attribs">Protected Attributes</a> &#124;
-<a href="class_image_sampler-members.html">List of all members</a>  </div>
+<a href="class_class_weighted_image_sampler-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">ImageSampler&lt; type, nChannels &gt; Class Template Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
+<div class="title">ClassWeightedImageSampler&lt; type, nChannels &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>Class interface for image sampling. The <a class="el" href="class_image_sampler.html" title="Class interface for image sampling. The ImageSampler class defines an interface for image sampling...">ImageSampler</a> class defines an interface for image sampling.  
- <a href="class_image_sampler.html#details">More...</a></p>
-
-<p><code>#include &lt;<a class="el" href="image__sampler_8hpp_source.html">image_sampler.hpp</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for ImageSampler&lt; type, nChannels &gt;:</div>
+Inheritance diagram for ClassWeightedImageSampler&lt; type, nChannels &gt;:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="class_image_sampler.png" usemap="#ImageSampler&lt; type, nChannels &gt;_map" alt=""/>
-  <map id="ImageSampler&lt; type, nChannels &gt;_map" name="ImageSampler&lt; type, nChannels &gt;_map">
-<area href="class_class_weighted_image_sampler.html" alt="ClassWeightedImageSampler&lt; type, nChannels &gt;" shape="rect" coords="0,56,291,80"/>
-<area href="class_uniform_image_sampler.html" alt="UniformImageSampler&lt; type, nChannels &gt;" shape="rect" coords="301,56,592,80"/>
+  <img src="class_class_weighted_image_sampler.png" usemap="#ClassWeightedImageSampler&lt; type, nChannels &gt;_map" alt=""/>
+  <map id="ClassWeightedImageSampler&lt; type, nChannels &gt;_map" name="ClassWeightedImageSampler&lt; type, nChannels &gt;_map">
+<area href="class_image_sampler.html" title="Class interface for image sampling. The ImageSampler class defines an interface for image sampling..." alt="ImageSampler&lt; type, nChannels &gt;" shape="rect" coords="0,0,291,24"/>
 </map>
  </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aef6e48e5557dfa86f3d5deeef6846afc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_image_sampler.html#aef6e48e5557dfa86f3d5deeef6846afc">ImageSampler</a> (unsigned int nSamples, unsigned int seed=0)</td></tr>
-<tr class="separator:aef6e48e5557dfa86f3d5deeef6846afc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51621026638a3dada267a2cb143c2362"><td class="memItemLeft" align="right" valign="top">virtual unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_image_sampler.html#a51621026638a3dada267a2cb143c2362">sample</a> (const type *data, const unsigned char *labels, unsigned int width, unsigned int height, unsigned int *samples) const =0</td></tr>
-<tr class="separator:a51621026638a3dada267a2cb143c2362"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23611efc2325bf85f067ba57c89b5936"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a23611efc2325bf85f067ba57c89b5936"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ClassWeightedImageSampler</b> (unsigned int nSamples, unsigned int nClasses, unsigned int seed=0)</td></tr>
+<tr class="separator:a23611efc2325bf85f067ba57c89b5936"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afbdb546096691752d72a3b792976d68a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afbdb546096691752d72a3b792976d68a"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ClassWeightedImageSampler</b> (unsigned int nSamples, unsigned int nClasses, const float *weights, unsigned int seed=0)</td></tr>
+<tr class="separator:afbdb546096691752d72a3b792976d68a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72371d67951c9c1c19340131bab7b745"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_class_weighted_image_sampler.html#a72371d67951c9c1c19340131bab7b745">sample</a> (const type *data, const unsigned char *labels, unsigned int width, unsigned int height, unsigned int *samples) const </td></tr>
+<tr class="separator:a72371d67951c9c1c19340131bab7b745"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_class_image_sampler"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_image_sampler')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_image_sampler.html">ImageSampler&lt; type, nChannels &gt;</a></td></tr>
+<tr class="memitem:aef6e48e5557dfa86f3d5deeef6846afc inherit pub_methods_class_image_sampler"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_image_sampler.html#aef6e48e5557dfa86f3d5deeef6846afc">ImageSampler</a> (unsigned int nSamples, unsigned int seed=0)</td></tr>
+<tr class="separator:aef6e48e5557dfa86f3d5deeef6846afc inherit pub_methods_class_image_sampler"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
-Protected Attributes</h2></td></tr>
-<tr class="memitem:a1d14d506ddd4e56e031c1d8264e93618"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1d14d506ddd4e56e031c1d8264e93618"></a>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_attribs_class_image_sampler"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_image_sampler')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_image_sampler.html">ImageSampler&lt; type, nChannels &gt;</a></td></tr>
+<tr class="memitem:a1d14d506ddd4e56e031c1d8264e93618 inherit pro_attribs_class_image_sampler"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1d14d506ddd4e56e031c1d8264e93618"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>m_nSamples</b></td></tr>
-<tr class="separator:a1d14d506ddd4e56e031c1d8264e93618"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a229d569e769c41e2bfa19c5cd7420a6b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a229d569e769c41e2bfa19c5cd7420a6b"></a>
+<tr class="separator:a1d14d506ddd4e56e031c1d8264e93618 inherit pro_attribs_class_image_sampler"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a229d569e769c41e2bfa19c5cd7420a6b inherit pro_attribs_class_image_sampler"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a229d569e769c41e2bfa19c5cd7420a6b"></a>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><b>m_seed</b></td></tr>
-<tr class="separator:a229d569e769c41e2bfa19c5cd7420a6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a229d569e769c41e2bfa19c5cd7420a6b inherit pro_attribs_class_image_sampler"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;typename type, unsigned int nChannels&gt;<br/>
-class ImageSampler&lt; type, nChannels &gt;</h3>
-
-<p>Class interface for image sampling. The <a class="el" href="class_image_sampler.html" title="Class interface for image sampling. The ImageSampler class defines an interface for image sampling...">ImageSampler</a> class defines an interface for image sampling. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">type</td><td><a class="el" href="class_image.html" title="Base class to store an image. The class acts as a simple container of pixels values. Arbitrary pixels type and number of channels are supported through template parameters. Image pixels must be stored continuously in memory. ">Image</a> pixels type. </td></tr>
-    <tr><td class="paramname">nChannels</td><td>Number of image channels </td></tr>
-  </table>
-  </dd>
-</dl>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="aef6e48e5557dfa86f3d5deeef6846afc"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename type, unsigned int nChannels&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="class_image_sampler.html">ImageSampler</a>&lt; type, nChannels &gt;::<a class="el" href="class_image_sampler.html">ImageSampler</a> </td>
-          <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>nSamples</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>seed</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Create a new sampler instance. The number of pixels to sample and an optional seed for random sampling are specified.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">nSamples</td><td>Number of pixels sampled for each image </td></tr>
-    <tr><td class="paramname">seed</td><td>Optional seed used for random sampling </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a51621026638a3dada267a2cb143c2362"></a>
+<a class="anchor" id="a72371d67951c9c1c19340131bab7b745"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename type, unsigned int nChannels&gt; </div>
+template&lt;typename type , unsigned int nChannels&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual unsigned int <a class="el" href="class_image_sampler.html">ImageSampler</a>&lt; type, nChannels &gt;::sample </td>
+          <td class="memname">unsigned int <a class="el" href="class_class_weighted_image_sampler.html">ClassWeightedImageSampler</a>&lt; type, nChannels &gt;::sample </td>
           <td>(</td>
           <td class="paramtype">const type *&#160;</td>
           <td class="paramname"><em>data</em>, </td>
@@ -229,7 +173,7 @@ template&lt;typename type, unsigned int nChannels&gt; </div>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -246,12 +190,13 @@ template&lt;typename type, unsigned int nChannels&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The number of sampled indices </dd></dl>
 
-<p>Implemented in <a class="el" href="class_class_weighted_image_sampler.html#a72371d67951c9c1c19340131bab7b745">ClassWeightedImageSampler&lt; type, nChannels &gt;</a>, and <a class="el" href="class_uniform_image_sampler.html#ab3d3383776955df0bbd634f9be2e1bb5">UniformImageSampler&lt; type, nChannels &gt;</a>.</p>
+<p>Implements <a class="el" href="class_image_sampler.html#a51621026638a3dada267a2cb143c2362">ImageSampler&lt; type, nChannels &gt;</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>/home/daniele/ieiit/workspace/padenti/src/padenti/<a class="el" href="image__sampler_8hpp_source.html">image_sampler.hpp</a></li>
+<hr/>The documentation for this class was generated from the following files:<ul>
+<li>/home/daniele/ieiit/workspace/padenti/src/padenti/<a class="el" href="classweighted__image__sampler_8hpp_source.html">classweighted_image_sampler.hpp</a></li>
+<li>/home/daniele/ieiit/workspace/padenti/src/padenti/<a class="el" href="classweighted__image__sampler__impl_8hpp_source.html">classweighted_image_sampler_impl.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">Padenti
-   &#160;<span id="projectnumber">0.1</span>
+   &#160;<span id="projectnumber">0.2</span>
    </div>
    <div id="projectbrief">An OpenCL-accelerated Random Forests implementation for Computer Vision applications using local features</div>
   </td>
@@ -87,10 +87,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><p>In this brief step-by-step tutorial we will explain how to use the Padenti library to implement a naive hand segmenter.</p>
 <h1><a class="anchor" id="dataset"></a>
 Downloading and processing the dataset</h1>
-<p>The input data consists in the depthmaps stream captured by a RGB-D camera. A depthmap is a two dimensional image where pixel data represents the distance (usually in mm) from the camera sensor at that specific pixel location. In this tutorial we are going to use the NYU Hand pose dataset and, more specifically, its subset provided for hand segmentation. The dataset can be downloaded at the following <a href="http://cims.nyu.edu/~tompson/NYU_Hand_Pose_Dataset.htm#download">link</a>.</p>
+<p>The input data consists in the depthmaps stream captured by a RGB-D camera. A depthmap is a two dimensional image where pixel data represents the distance (usually in mm) from the camera sensor at that specific pixel location. In this tutorial we are going to use the NYU Hand pose dataset and, more specifically, its subset provided for hand segmentation. The dataset can be downloaded at the following <a href="http://cims.nyu.edu/~tompson/NYU_Hand_Pose_Dataset.htm#download">link</a> (<a href="https://drive.google.com/open?id=0B_ILMW63e765TFJDQm0yQTRHcFE">mirror</a>).</p>
 <p>Before being used, the dataset must converted in a format compatible with the Padenti library. For this purpose, we can use the process_dataset.py python script shipped with the library (it can be found in the script subfolder). Once the dataset has been downloaded and extracted, we can excute the script as follows</p>
 <div class="fragment"><div class="line">python process_dataset.py DATASET_PATH OUT_PATH</div>
 </div><!-- fragment --><p>where DATASET_PATH is the directory containing the original dataset images, while OUT_PATH is the processed dataset destination path. After the script execution ends, OUT_PATH contains two folders (train and test) where the processed images of the training set and the test set are stored.</p>
+<dl class="section note"><dt>Note</dt><dd>The script above requires the numpy and OpenCV2 python wrappers to be installed. The Windows installers can be found <a href="http://www.lfd.uci.edu/~gohlke/pythonlibs">here</a></dd></dl>
 <p>For each image of the original dataset, two new images are generated: a 16bit single channel image &lt;IMAGE&gt;_depth.png containing the depth values, and a RGB image representing the depthmap labelling. Labels mark the depthmap pixels as hand (red color) or background (blue colors). Pixels that must not be processed (in this case, pixels whose depth values is greater than 2m) are labeles with black. A labels image example is shown below</p>
 <div class="image">
 <img src="labels_example.png" alt="labels_example.png"/>
@@ -262,7 +263,7 @@ Test</h1>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 11 2015 12:25:29 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 31 2016 14:25:15 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

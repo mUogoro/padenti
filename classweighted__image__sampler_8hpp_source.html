@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>Padenti: /home/daniele/ieiit/workspace/padenti/src/padenti/image.hpp Source File</title>
+<title>Padenti: /home/daniele/ieiit/workspace/padenti/src/padenti/classweighted_image_sampler.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -86,7 +86,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">image.hpp</div>  </div>
+<div class="title">classweighted_image_sampler.hpp</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/******************************************************************************</span></div>
@@ -108,46 +108,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment"> * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> ******************************************************************************/</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#ifndef __IMAGE_HPP</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define __IMAGE_HPP</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#ifndef __CLASSWEIGHTED_IMAGE_SAMPLER_HPP</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define __CLASSWEIGHTED_IMAGE_SAMPLER_HPP</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;cstdlib&gt;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> type, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nChannels&gt;</div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="class_image.html">   35</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_image.html">Image</a></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;{</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  type *m_data;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> m_width;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> m_height;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="class_image.html#ad3d5c9bf9a9b249b96818c6c7a81999c">   46</a></span>&#160;  <a class="code" href="class_image.html#ad3d5c9bf9a9b249b96818c6c7a81999c">Image</a>():m_data(NULL){};</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <a class="code" href="class_image.html#ad3d5c9bf9a9b249b96818c6c7a81999c">Image</a>(<span class="keyword">const</span> type *data, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> width, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> height);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <a class="code" href="class_image.html#ad3d5c9bf9a9b249b96818c6c7a81999c">Image</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> width, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> height);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  <a class="code" href="class_image.html#ad3d5c9bf9a9b249b96818c6c7a81999c">Image</a>(<span class="keyword">const</span> <a class="code" href="class_image.html">Image&lt;type, nChannels&gt;</a> &amp;image);</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  ~<a class="code" href="class_image.html">Image</a>();</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;  <a class="code" href="class_image.html">Image&lt;type, nChannels&gt;</a>&amp; <a class="code" href="class_image.html#ab502d5f764108bbf996f4ebae0cccf81">operator=</a>(<span class="keyword">const</span> <a class="code" href="class_image.html">Image&lt;type, nChannels&gt;</a> &amp;other);</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  type *<a class="code" href="class_image.html#a147a6758b3f291ae33b0fb5795c56ce4">getData</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  </div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="class_image.html#a283093d6315acd61c8be1a377329ffbf">getWidth</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="class_image.html#a103407f6d1d0122a2d5a5d82439f63b7">getHeight</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;};</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="preprocessor">#include &lt;padenti/image_impl.hpp&gt;</span></div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="preprocessor">#endif // __IMAGE_HPP</span></div>
-<div class="ttc" id="class_image_html_a147a6758b3f291ae33b0fb5795c56ce4"><div class="ttname"><a href="class_image.html#a147a6758b3f291ae33b0fb5795c56ce4">Image::getData</a></div><div class="ttdeci">type * getData() const </div><div class="ttdef"><b>Definition:</b> image_impl.hpp:83</div></div>
-<div class="ttc" id="class_image_html"><div class="ttname"><a href="class_image.html">Image</a></div><div class="ttdoc">Base class to store an image. The class acts as a simple container of pixels values. Arbitrary pixels type and number of channels are supported through template parameters. Image pixels must be stored continuously in memory. </div><div class="ttdef"><b>Definition:</b> image.hpp:35</div></div>
-<div class="ttc" id="class_image_html_a283093d6315acd61c8be1a377329ffbf"><div class="ttname"><a href="class_image.html#a283093d6315acd61c8be1a377329ffbf">Image::getWidth</a></div><div class="ttdeci">unsigned int getWidth() const </div><div class="ttdef"><b>Definition:</b> image_impl.hpp:90</div></div>
-<div class="ttc" id="class_image_html_ab502d5f764108bbf996f4ebae0cccf81"><div class="ttname"><a href="class_image.html#ab502d5f764108bbf996f4ebae0cccf81">Image::operator=</a></div><div class="ttdeci">Image&lt; type, nChannels &gt; &amp; operator=(const Image&lt; type, nChannels &gt; &amp;other)</div><div class="ttdef"><b>Definition:</b> image_impl.hpp:49</div></div>
-<div class="ttc" id="class_image_html_a103407f6d1d0122a2d5a5d82439f63b7"><div class="ttname"><a href="class_image.html#a103407f6d1d0122a2d5a5d82439f63b7">Image::getHeight</a></div><div class="ttdeci">unsigned int getHeight() const </div><div class="ttdef"><b>Definition:</b> image_impl.hpp:96</div></div>
-<div class="ttc" id="class_image_html_ad3d5c9bf9a9b249b96818c6c7a81999c"><div class="ttname"><a href="class_image.html#ad3d5c9bf9a9b249b96818c6c7a81999c">Image::Image</a></div><div class="ttdeci">Image()</div><div class="ttdef"><b>Definition:</b> image.hpp:46</div></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> type, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nChannels&gt;</div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="class_class_weighted_image_sampler.html">   24</a></span>&#160;<span class="keyword">class </span><a class="code" href="class_class_weighted_image_sampler.html">ClassWeightedImageSampler</a>: <span class="keyword">public</span> <a class="code" href="class_image_sampler.html">ImageSampler</a>&lt;type, nChannels&gt;</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;{</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> m_nClasses;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *m_perClassBucketSize;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <a class="code" href="class_class_weighted_image_sampler.html">ClassWeightedImageSampler</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nSamples, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nClasses, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> seed=0);</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <a class="code" href="class_class_weighted_image_sampler.html">ClassWeightedImageSampler</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nSamples, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nClasses, <span class="keyword">const</span> <span class="keywordtype">float</span> *weights, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> seed=0);</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  ~<a class="code" href="class_class_weighted_image_sampler.html">ClassWeightedImageSampler</a>();</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="class_class_weighted_image_sampler.html#a72371d67951c9c1c19340131bab7b745">sample</a>(<span class="keyword">const</span> type *data, <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> *labels,</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;              <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> width, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> height, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *samples) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;};</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;padenti/classweighted_image_sampler_impl.hpp&gt;</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#endif // __CLASSWEIGHTED_IMAGE_SAMPLER_HPP</span></div>
+<div class="ttc" id="class_class_weighted_image_sampler_html_a72371d67951c9c1c19340131bab7b745"><div class="ttname"><a href="class_class_weighted_image_sampler.html#a72371d67951c9c1c19340131bab7b745">ClassWeightedImageSampler::sample</a></div><div class="ttdeci">unsigned int sample(const type *data, const unsigned char *labels, unsigned int width, unsigned int height, unsigned int *samples) const </div><div class="ttdef"><b>Definition:</b> classweighted_image_sampler_impl.hpp:54</div></div>
+<div class="ttc" id="class_class_weighted_image_sampler_html"><div class="ttname"><a href="class_class_weighted_image_sampler.html">ClassWeightedImageSampler</a></div><div class="ttdef"><b>Definition:</b> classweighted_image_sampler.hpp:24</div></div>
+<div class="ttc" id="class_image_sampler_html"><div class="ttname"><a href="class_image_sampler.html">ImageSampler</a></div><div class="ttdoc">Class interface for image sampling. The ImageSampler class defines an interface for image sampling...</div><div class="ttdef"><b>Definition:</b> image_sampler.hpp:31</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

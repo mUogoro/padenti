@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>Padenti: /home/daniele/Desktop/padenti/src/padenti/cl_tree_trainer_impl_learn_best_featthr.hpp Source File</title>
+<title>Padenti: /home/daniele/ieiit/workspace/padenti/src/padenti/cl_tree_trainer_impl_learn_best_featthr.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">Padenti
-   &#160;<span id="projectnumber">0.1</span>
+   &#160;<span id="projectnumber">0.2</span>
    </div>
    <div id="projectbrief">An OpenCL-accelerated Random Forests implementation for Computer Vision applications using local features</div>
   </td>
@@ -109,7 +109,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment"> ******************************************************************************/</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;</div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#include &lt;boost/chrono/chrono.hpp&gt;</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;boost/log/trivial.hpp&gt;</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="comment">//#include &lt;boost/log/trivial.hpp&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> ImgType, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nChannels, <span class="keyword">typename</span> FeatType, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> FeatDim,</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> nClasses&gt;</div>
@@ -250,97 +250,113 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    </div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;      <span class="comment">// Finally, recompute feature and threshold values for current node</span></div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="comment"></span>      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> seed[4] = {tree.<a class="code" href="class_tree.html#a083b9844d7322efbcc9bac7094873b39">getID</a>(),</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;                  nodeID,</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;                  perNodeBestFeatures[bestID],</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;                  0};</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> state[4];</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;      <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j=0; j&lt;FeatDim; j+=4)</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;      {</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    md5Rand(seed, state);</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;     </div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j] +</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[0])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j]));</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordflow">if</span> ((j+1)&gt;=FeatDim) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;</div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j+1] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+1]  +</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[1])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j+1]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+1]));</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    <span class="keywordflow">if</span> ((j+2)&gt;=FeatDim) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;      </div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j+2] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+2] +</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[2])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j+2]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+2]));</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    <span class="keywordflow">if</span> ((j+3)&gt;=FeatDim) <span class="keywordflow">break</span>;    </div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j+3] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+3] +</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[3])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j+3]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+3]));</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;      </div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    std::copy(state, state+4, seed);</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;      }</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="comment"></span>      <span class="comment">/*</span></div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="comment">      unsigned int seed[4] = {tree.getID()^m_seed,</span></div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="comment">                  nodeID^m_seed,</span></div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="comment">                  perNodeBestFeatures[bestID]^m_seed,</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="comment">                  m_seed};</span></div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="comment">      */</span></div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> seed[4] = {tree.<a class="code" href="class_tree.html#a083b9844d7322efbcc9bac7094873b39">getID</a>(),</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                  nodeID,</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                  perNodeBestFeatures[bestID],</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                  0};</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;      <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> state[4];</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;      <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j=0; j&lt;FeatDim; j+=4)</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;      {</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    md5Rand(seed, state);</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;     </div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j] +</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[0])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j]));</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    <span class="keywordflow">if</span> ((j+1)&gt;=FeatDim) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j+1] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+1]  +</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[1])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j+1]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+1]));</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="keywordflow">if</span> ((j+2)&gt;=FeatDim) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;      </div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j+2] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+2] +</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[2])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j+2]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+2]));</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    <span class="keywordflow">if</span> ((j+3)&gt;=FeatDim) <span class="keywordflow">break</span>;    </div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    </div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;      seed[0] = tree.<a class="code" href="class_tree.html#a083b9844d7322efbcc9bac7094873b39">getID</a>();</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;      seed[1] = nodeID;</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;      seed[2] = perNodeBestFeatures[bestID];</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;      seed[3] = 1;</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;      <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j=0; j&lt;(perNodeBestThresholds[bestID]/4+1); j++)</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;      {</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    md5Rand(seed, state);</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    std::copy(state, state+4, seed);</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;      }</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;      *currNode.<a class="code" href="class_tree_node.html#aaca0fd860c304e0932051e83e528d7e3">m_threshold</a> = params.<a class="code" href="class_tree_trainer_parameters.html#ad97a3385b45afa0f07dd97c7651422ff">thrLowBound</a> +</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    (FeatType)((<span class="keywordtype">float</span>)state[perNodeBestThresholds[bestID]%4]/0xFFFFFFFF*</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;           (params.<a class="code" href="class_tree_trainer_parameters.html#a080f31a7c42cdbba9149dc9ebbc7a9c3">thrUpBound</a>-params.<a class="code" href="class_tree_trainer_parameters.html#ad97a3385b45afa0f07dd97c7651422ff">thrLowBound</a>));</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;      <span class="comment">// Update current node left child</span></div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;      *currNode.<a class="code" href="class_tree_node.html#a0ed75d340dbd214873d4563b4d21224c">m_leftChild</a> = nodeID*2+1;</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;      <span class="comment">// Done with node</span></div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;      <span class="keyword">delete</span> []rightPosteriors;</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;      <span class="keyword">delete</span> []leftPosteriors;</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;      <span class="keyword">delete</span> []rightHistogram;</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;      <span class="keyword">delete</span> []leftHistogram;</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;    }</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;  }</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    currNode.<a class="code" href="class_tree_node.html#ac44362560e7c1e585071c87e3c6dd8f1">m_feature</a>[j+3] = params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+3] +</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;      (FeatType)(((<span class="keywordtype">float</span>)state[3])/(0xFFFFFFFF)*(params.<a class="code" href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">featUpBounds</a>[j+3]-params.<a class="code" href="class_tree_trainer_parameters.html#a02a6f98a67477e62e1d81521f36c57c1">featLowBounds</a>[j+3]));</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;      </div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    std::copy(state, state+4, seed);</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;      }</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;      </div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;      seed[0] = tree.<a class="code" href="class_tree.html#a083b9844d7322efbcc9bac7094873b39">getID</a>();</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;      seed[1] = nodeID;</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;      seed[2] = perNodeBestFeatures[bestID];</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;      seed[3] = 1;</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;      <span class="keywordflow">for</span> (<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> j=0; j&lt;(perNodeBestThresholds[bestID]/4+1); j++)</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;      {</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    md5Rand(seed, state);</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    std::copy(state, state+4, seed);</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;      }</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;      *currNode.<a class="code" href="class_tree_node.html#aaca0fd860c304e0932051e83e528d7e3">m_threshold</a> = params.<a class="code" href="class_tree_trainer_parameters.html#ad97a3385b45afa0f07dd97c7651422ff">thrLowBound</a> +</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;    (FeatType)((<span class="keywordtype">float</span>)state[perNodeBestThresholds[bestID]%4]/0xFFFFFFFF*</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;           (params.<a class="code" href="class_tree_trainer_parameters.html#a080f31a7c42cdbba9149dc9ebbc7a9c3">thrUpBound</a>-params.<a class="code" href="class_tree_trainer_parameters.html#ad97a3385b45afa0f07dd97c7651422ff">thrLowBound</a>));</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;      </div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;      <span class="comment">/*</span></div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;<span class="comment">      *currNode.m_threshold = params.thrLowBound + </span></div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment">       (FeatType)((float)perNodeBestThresholds[bestID]*</span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;<span class="comment">           (params.thrUpBound-params.thrLowBound)/params.nThresholds);</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="comment">      */</span></div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;  <span class="comment">// Finally, update node&#39;s portion of tree&#39;s OpenCL buffers</span></div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;  <span class="comment">//unsigned int startNode = m_frontier[currSlice*maxNodesPerGlobalHistogram];</span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;  <span class="comment">//unsigned int endNode = m_frontier[currSlice*maxNodesPerGlobalHistogram+toTrainNodes-1];</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> startNode = m_frontier[currSlice*m_histogramSize];</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> endNode = m_frontier[currSlice*m_histogramSize+toTrainNodes-1];</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> toWriteNodes = endNode-startNode+1;</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;      <span class="comment">// Update current node left child</span></div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;      *currNode.<a class="code" href="class_tree_node.html#a0ed75d340dbd214873d4563b4d21224c">m_leftChild</a> = nodeID*2+1;</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;      <span class="comment">// Done with node</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeLeftChildBuff,</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;                   CL_FALSE,</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;                   startNode*<span class="keyword">sizeof</span>(cl_int), toWriteNodes*<span class="keyword">sizeof</span>(cl_int),</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a5cc67599cc1a6f8bcc5f56d10fd84c84">getLeftChildren</a>()[startNode]));</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeLeftChildBuff,</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;                   CL_FALSE,</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;                   (startNode*2+1)*<span class="keyword">sizeof</span>(cl_int), toWriteNodes*2*<span class="keyword">sizeof</span>(cl_int),</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a5cc67599cc1a6f8bcc5f56d10fd84c84">getLeftChildren</a>()[startNode*2+1]));</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeFeaturesBuff,</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;                   CL_FALSE,</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;                   startNode*FeatDim*<span class="keyword">sizeof</span>(FeatType),</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;                   toWriteNodes*FeatDim*<span class="keyword">sizeof</span>(FeatType),</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a6fc3aa9512849a19acb93cef3fc1a372">getFeatures</a>()[startNode*FeatDim]));</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeThrsBuff,</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;      <span class="keyword">delete</span> []rightPosteriors;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;      <span class="keyword">delete</span> []leftPosteriors;</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;      <span class="keyword">delete</span> []rightHistogram;</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;      <span class="keyword">delete</span> []leftHistogram;</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    }</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;  }</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;  <span class="comment">// Finally, update node&#39;s portion of tree&#39;s OpenCL buffers</span></div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  <span class="comment">//unsigned int startNode = m_frontier[currSlice*maxNodesPerGlobalHistogram];</span></div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;  <span class="comment">//unsigned int endNode = m_frontier[currSlice*maxNodesPerGlobalHistogram+toTrainNodes-1];</span></div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> startNode = m_frontier[currSlice*m_histogramSize];</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> endNode = m_frontier[currSlice*m_histogramSize+toTrainNodes-1];</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> toWriteNodes = endNode-startNode+1;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeLeftChildBuff,</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;                   CL_FALSE,</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                   startNode*<span class="keyword">sizeof</span>(FeatType), toWriteNodes*<span class="keyword">sizeof</span>(FeatType),</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a089d15a3d758ac8c219633f7bafc4ea0">getThresholds</a>()[startNode]));</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreePosteriorsBuff,</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                   CL_TRUE,</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                   (startNode*2+1)*nClasses*<span class="keyword">sizeof</span>(cl_float),</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                   toWriteNodes*2*nClasses*<span class="keyword">sizeof</span>(cl_float),</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#abeaca44f0c54c4222ca47cc0414e5b6b">getPosteriors</a>()[(startNode+2+1)*nClasses]));</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;  boost::chrono::duration&lt;double&gt; learnTime = </div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    boost::chrono::duration_cast&lt;boost::chrono::duration&lt;double&gt; &gt;(boost::chrono::steady_clock::now()-startLearn);</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;  BOOST_LOG_TRIVIAL(info) &lt;&lt; <span class="stringliteral">&quot;Best feature/threshold for nodes &quot;</span> &lt;&lt; startNode</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;              &lt;&lt; <span class="stringliteral">&quot;-&quot;</span> &lt;&lt; endNode &lt;&lt; <span class="stringliteral">&quot; learnt in &quot;</span></div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;              &lt;&lt; learnTime.count() &lt;&lt; <span class="stringliteral">&quot; seconds&quot;</span>;</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;}</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;                   startNode*<span class="keyword">sizeof</span>(cl_int), toWriteNodes*<span class="keyword">sizeof</span>(cl_int),</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a5cc67599cc1a6f8bcc5f56d10fd84c84">getLeftChildren</a>()[startNode]));</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeLeftChildBuff,</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;                   CL_FALSE,</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;                   (startNode*2+1)*<span class="keyword">sizeof</span>(cl_int), toWriteNodes*2*<span class="keyword">sizeof</span>(cl_int),</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a5cc67599cc1a6f8bcc5f56d10fd84c84">getLeftChildren</a>()[startNode*2+1]));</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeFeaturesBuff,</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                   CL_FALSE,</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;                   startNode*FeatDim*<span class="keyword">sizeof</span>(FeatType),</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                   toWriteNodes*FeatDim*<span class="keyword">sizeof</span>(FeatType),</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a6fc3aa9512849a19acb93cef3fc1a372">getFeatures</a>()[startNode*FeatDim]));</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreeThrsBuff,</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;                   CL_FALSE,</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;                   startNode*<span class="keyword">sizeof</span>(FeatType), toWriteNodes*<span class="keyword">sizeof</span>(FeatType),</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#a089d15a3d758ac8c219633f7bafc4ea0">getThresholds</a>()[startNode]));</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;  m_clQueue1.enqueueWriteBuffer(m_clTreePosteriorsBuff,</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;                   CL_TRUE,</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;                   (startNode*2+1)*nClasses*<span class="keyword">sizeof</span>(cl_float),</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                   toWriteNodes*2*nClasses*<span class="keyword">sizeof</span>(cl_float),</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                   (<span class="keywordtype">void</span>*)(&amp;tree.<a class="code" href="class_tree.html#abeaca44f0c54c4222ca47cc0414e5b6b">getPosteriors</a>()[(startNode+2+1)*nClasses]));</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;  <span class="comment">/*</span></div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;<span class="comment">  boost::chrono::duration&lt;double&gt; learnTime = </span></div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;<span class="comment">    boost::chrono::duration_cast&lt;boost::chrono::duration&lt;double&gt; &gt;(boost::chrono::steady_clock::now()-startLearn);</span></div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="comment">  BOOST_LOG_TRIVIAL(info) &lt;&lt; &quot;Best feature/threshold for nodes &quot; &lt;&lt; startNode</span></div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="comment">              &lt;&lt; &quot;-&quot; &lt;&lt; endNode &lt;&lt; &quot; learnt in &quot;</span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="comment">              &lt;&lt; learnTime.count() &lt;&lt; &quot; seconds&quot;;</span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;<span class="comment">  */</span></div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;}</div>
 <div class="ttc" id="class_tree_trainer_parameters_html_ad97a3385b45afa0f07dd97c7651422ff"><div class="ttname"><a href="class_tree_trainer_parameters.html#ad97a3385b45afa0f07dd97c7651422ff">TreeTrainerParameters::thrLowBound</a></div><div class="ttdeci">FeatType thrLowBound</div><div class="ttdef"><b>Definition:</b> tree_trainer.hpp:46</div></div>
 <div class="ttc" id="class_tree_trainer_parameters_html_a13555672449a514ffd5f2e0ca032e750"><div class="ttname"><a href="class_tree_trainer_parameters.html#a13555672449a514ffd5f2e0ca032e750">TreeTrainerParameters::featUpBounds</a></div><div class="ttdeci">FeatType featUpBounds[FeatDim]</div><div class="ttdef"><b>Definition:</b> tree_trainer.hpp:44</div></div>
 <div class="ttc" id="class_tree_trainer_parameters_html_a080f31a7c42cdbba9149dc9ebbc7a9c3"><div class="ttname"><a href="class_tree_trainer_parameters.html#a080f31a7c42cdbba9149dc9ebbc7a9c3">TreeTrainerParameters::thrUpBound</a></div><div class="ttdeci">FeatType thrUpBound</div><div class="ttdef"><b>Definition:</b> tree_trainer.hpp:47</div></div>
@@ -364,7 +380,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 11 2015 12:25:29 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 31 2016 14:25:15 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

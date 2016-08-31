@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">Padenti
-   &#160;<span id="projectnumber">0.1</span>
+   &#160;<span id="projectnumber">0.2</span>
    </div>
    <div id="projectbrief">An OpenCL-accelerated Random Forests implementation for Computer Vision applications using local features</div>
   </td>
@@ -87,54 +87,58 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h1><a class="anchor" id="deps"></a>
 Dependencies</h1>
 <ul>
-<li>A GNU Linux system</li>
+<li>A GNU Linux or Windows system</li>
 <li>An OpenCL environment from either Nvidia or AMD</li>
 <li>A CPU with SS2 instructions support</li>
-<li>OpenCV</li>
+<li>OpenCV (components highgui and imgproc)</li>
 <li>Boost (components random, filesystem, chrono and log)</li>
-<li>cmake (for compilation and installation)</li>
+<li>cmake 3.1 (for compilation and installation)</li>
 <li>Doxygen (for documentation generation)</li>
+<li><a href="https://www.sourceware.org/pthreads-win32/">pthread-win32</a> (Windows only)</li>
+<li><a href="https://www.cygwin.com/">cygwin</a> (xxd Windows port needed for compilation).</li>
 </ul>
 <h1><a class="anchor" id="inst"></a>
 Compiling and installing the library</h1>
+<p>On Linux </p>
 <div class="fragment"><div class="line">git clone https:<span class="comment">//github.com/mUogoro/padenti.git padenti</span></div>
 <div class="line">cd padenti</div>
 <div class="line">mkdir build &amp;&amp; cd build</div>
-<div class="line"><span class="preprocessor"># The flag -DNVIDIA=True is mandatory for Nvidia OpenCL implementation support</span></div>
-<div class="line"><span class="preprocessor"></span>cmake -DNVIDIA=True ..</div>
+<div class="line">cmake ..</div>
 <div class="line">make &amp;&amp; make doc &amp;&amp; make install</div>
-</div><!-- fragment --><h1><a class="anchor" id="usage"></a>
+</div><!-- fragment --><p> On Windows, open the generated solution file in Visual Studio.</p>
+<dl class="section note"><dt>Note</dt><dd>The cmake building configuration must match the Visual Studio one (i.e. either Debug or Release for both).</dd></dl>
+<h1><a class="anchor" id="usage"></a>
 Usage</h1>
 <p>A PadentiConfig.cmake file is installed together with the library and it can be used to import the library into new projects</p>
-<div class="fragment"><div class="line">cmake_minimum_required (VERSION 2.8)</div>
+<div class="fragment"><div class="line">cmake_minimum_required (VERSION 3.1)</div>
 <div class="line">project (NewProject)</div>
 <div class="line"></div>
 <div class="line">find_package(Padenti REQUIRED)</div>
 <div class="line"></div>
 <div class="line">...</div>
 <div class="line"></div>
-<div class="line">include_directories($Padenti_INCLUDE_DIRS)</div>
-<div class="line">link_directories($Padenti_LIBRARIES_DIR)</div>
+<div class="line">include_directories($PADENTI_INCLUDE_DIRS)</div>
+<div class="line">link_directories($PADENTI_LIBRARIES_DIR)</div>
 <div class="line"></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line">add_executable(test test.cpp)</div>
-<div class="line">target_link_libraries(test $Padenti_LIBRARIES)</div>
+<div class="line">target_link_libraries(test $PADENTI_LIBRARIES)</div>
 </div><!-- fragment --><p>Please note that all the required library dependencies (i.e. OpenCV and Boost modules) are included within the PadentiConfig.cmake defined variables.</p>
 <h1><a class="anchor" id="platform"></a>
 Tested platforms</h1>
 <p>Padenti has been developed and tested on the following configuration:</p>
 <ul>
-<li>Ubuntu Linux 14.04LTS</li>
-<li>gcc 4.8</li>
-<li>NVIDIA CUDA SDK 7.0 (driver version 346.82)</li>
+<li>Ubuntu Linux 14.04LTS, Windows 8.1 Pro</li>
+<li>gcc 4.8, Visual Studio 2013</li>
+<li>NVIDIA CUDA SDK 7.5 (driver version 352)</li>
 <li>AMD OpenCL (driver version 14.12)</li>
-<li>tested GPUs: Nvidia GTX670, AMD R9280X, Nvidia 650M </li>
+<li>tested GPUs: Nvidia 650M/GTX670/GTX770/TitanX, AMD R9280X </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 11 2015 12:25:29 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 31 2016 14:25:15 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

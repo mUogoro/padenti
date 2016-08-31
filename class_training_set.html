@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">Padenti
-   &#160;<span id="projectnumber">0.1</span>
+   &#160;<span id="projectnumber">0.2</span>
    </div>
    <div id="projectbrief">An OpenCL-accelerated Random Forests implementation for Computer Vision applications using local features</div>
   </td>
@@ -99,12 +99,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a4f116230e5430dac9e49d95ae21ac4b4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_training_set.html#a4f116230e5430dac9e49d95ae21ac4b4">TrainingSet</a> (unsigned int nClasses)</td></tr>
+<tr class="separator:a4f116230e5430dac9e49d95ae21ac4b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0ac3a2ba793c699f2a2fc092596472d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_training_set.html#af0ac3a2ba793c699f2a2fc092596472d">TrainingSet</a> (const std::string &amp;tsPath, const std::string &amp;dataSuffix, const std::string &amp;labelsSuffix, unsigned int nClasses, <a class="el" href="class_image_loader.html">ImageLoader</a>&lt; type, nChannels &gt; &amp;dataLoader, <a class="el" href="class_image_loader.html">ImageLoader</a>&lt; unsigned char, 1 &gt; &amp;labelsLoader, const <a class="el" href="class_image_sampler.html">ImageSampler</a>&lt; type, nChannels &gt; &amp;sampler)</td></tr>
 <tr class="separator:af0ac3a2ba793c699f2a2fc092596472d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1999c281e2a5391964c570625c85107f"><td class="memItemLeft" align="right" valign="top">const std::vector<br class="typebreak"/>
 &lt; <a class="el" href="class_training_set_image.html">TrainingSetImage</a>&lt; type, <br class="typebreak"/>
 nChannels &gt; &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_training_set.html#a1999c281e2a5391964c570625c85107f">getImages</a> () const </td></tr>
 <tr class="separator:a1999c281e2a5391964c570625c85107f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf5bd083e3a459f84b32fc19fddfcadb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="class_training_set.html">TrainingSet</a>&lt; type, nChannels &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_training_set.html#abf5bd083e3a459f84b32fc19fddfcadb">operator&lt;&lt;</a> (const <a class="el" href="class_training_set_image.html">TrainingSetImage</a>&lt; type, nChannels &gt; &amp;image)</td></tr>
+<tr class="separator:abf5bd083e3a459f84b32fc19fddfcadb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac3d1fd72594cf590aba66c376abc0552"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_training_set.html#ac3d1fd72594cf590aba66c376abc0552">getNImages</a> () const </td></tr>
 <tr class="separator:ac3d1fd72594cf590aba66c376abc0552"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac4e99b230b02b33f9313a6a498793537"><td class="memItemLeft" align="right" valign="top">const float *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_training_set.html#ac4e99b230b02b33f9313a6a498793537">getPriors</a> () const </td></tr>
@@ -116,6 +120,31 @@ class TrainingSet&lt; type, nChannels &gt;</h3>
 
 <p><a class="el" href="class_training_set.html" title="TrainingSet class. The class is responsible of loading and sampling a set of images pairs stored on d...">TrainingSet</a> class. The class is responsible of loading and sampling a set of images pairs stored on disk in a path specified by the user. Each pair consists of a data image, containing pixels values, and a labels image, where pixels labels are stored. The two images are combined in a single <a class="el" href="class_training_set_image.html" title="Base class to store a training set image. The class extends the Image class and stores the following ...">TrainingSetImage</a> instance, sampled and stored within the <a class="el" href="class_training_set.html" title="TrainingSet class. The class is responsible of loading and sampling a set of images pairs stored on d...">TrainingSet</a> object. Pairs are recognized by their names: data and labels image files have the same prefix and a different suffix specified by the user. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a class="anchor" id="a4f116230e5430dac9e49d95ae21ac4b4"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename type , unsigned int nChannels&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_training_set.html">TrainingSet</a>&lt; type, nChannels &gt;::<a class="el" href="class_training_set.html">TrainingSet</a> </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>nClasses</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Create an empty training set.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Maximum</td><td>number of different classes used for labeling </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="af0ac3a2ba793c699f2a2fc092596472d"></a>
 <div class="memitem">
 <div class="memproto">
@@ -190,8 +219,7 @@ template&lt;typename type, unsigned int nChannels&gt; </div>
   </table>
   </dd>
 </dl>
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000041">Todo:</a></b></dt><dd>how to deal with (rare) cases when image resolution or number of channels are greater than the ones supported? </dd></dl>
-<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000042">Todo:</a></b></dt><dd>log skipped samples? </dd></dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000036">Todo:</a></b></dt><dd>how to deal with (rare) cases when image resolution or number of channels are greater than the ones supported? </dd></dl>
 <p>Compute per-class priors </p>
 
 </div>
@@ -254,14 +282,39 @@ template&lt;typename type , unsigned int nChannels&gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="abf5bd083e3a459f84b32fc19fddfcadb"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename type, unsigned int nChannels&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_training_set.html">TrainingSet</a>&lt; type, nChannels &gt; &amp; <a class="el" href="class_training_set.html">TrainingSet</a>&lt; type, nChannels &gt;::operator&lt;&lt; </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_training_set_image.html">TrainingSetImage</a>&lt; type, nChannels &gt; &amp;&#160;</td>
+          <td class="paramname"><em>image</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Add a training set image to the training set</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">image</td><td>a <a class="el" href="class_training_set_image.html" title="Base class to store a training set image. The class extends the Image class and stores the following ...">TrainingSetImage</a> instance </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>/home/daniele/Desktop/padenti/src/padenti/<a class="el" href="training__set_8hpp_source.html">training_set.hpp</a></li>
-<li>/home/daniele/Desktop/padenti/src/padenti/<a class="el" href="training__set__impl_8hpp_source.html">training_set_impl.hpp</a></li>
+<li>/home/daniele/ieiit/workspace/padenti/src/padenti/<a class="el" href="training__set_8hpp_source.html">training_set.hpp</a></li>
+<li>/home/daniele/ieiit/workspace/padenti/src/padenti/<a class="el" href="training__set__impl_8hpp_source.html">training_set_impl.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 11 2015 12:25:29 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 31 2016 14:25:15 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

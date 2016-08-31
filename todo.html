@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">Padenti
-   &#160;<span id="projectnumber">0.1</span>
+   &#160;<span id="projectnumber">0.2</span>
    </div>
    <div id="projectbrief">An OpenCL-accelerated Random Forests implementation for Computer Vision applications using local features</div>
   </td>
@@ -81,42 +81,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><dl class="reflist">
-<dt><a class="anchor" id="_todo000034"></a>Class <a class="el" href="class_classifier.html">Classifier&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;</a>  </dt>
+<dt><a class="anchor" id="_todo000030"></a>Class <a class="el" href="class_classifier.html">Classifier&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;</a>  </dt>
 <dd>define tree loading methods here as well  </dd>
-<dt><a class="anchor" id="_todo000001"></a>Member <a class="el" href="class_c_l_classifier.html#a5a29dbdd778ea7c56cdba2fe6e326c43">CLClassifier&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::CLClassifier</a>  (const std::string &amp;featureKernelPath, bool useCPU=false)</dt>
-<dd>Store feature type typedef file in a platform indipendent path  </dd>
-<dt><a class="anchor" id="_todo000003"></a>Member <a class="el" href="class_c_l_classifier.html#a47ab1585f084cb77cbeca28d81beccc3">CLClassifier&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::predict</a>  (const Image&lt; ImgType, nChannels &gt; &amp;image, Image&lt; float, nClasses &gt; &amp;prediction, Image&lt; unsigned char, 1 &gt; &amp;mask)</dt>
+<dt><a class="anchor" id="_todo000001"></a>Member <a class="el" href="class_c_l_classifier.html#a47ab1585f084cb77cbeca28d81beccc3">CLClassifier&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::predict</a>  (const Image&lt; ImgType, nChannels &gt; &amp;image, Image&lt; float, nClasses &gt; &amp;prediction, Image&lt; unsigned char, 1 &gt; &amp;mask)</dt>
 <dd>Optimize with intrinsics  </dd>
-<dt><a class="anchor" id="_todo000002"></a>Member <a class="el" href="class_c_l_classifier.html#a0ce2152481e14e3c22443534681e0e1d">CLClassifier&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::~CLClassifier</a>  ()</dt>
-<dd>Possible optimization: init OpenCL image once and keep them while the input image size does not change  </dd>
-<dt><a class="anchor" id="_todo000009"></a>Member <a class="el" href="class_c_l_tree_trainer.html#a81f30f97523cecbf503a4264db6f3615">CLTreeTrainer&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::CLTreeTrainer</a>  (const std::string &amp;featureKernelPath, bool useCPU)</dt>
+<dt><a class="anchor" id="_todo000008"></a>Member <a class="el" href="class_c_l_tree_trainer.html#a81f30f97523cecbf503a4264db6f3615">CLTreeTrainer&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::CLTreeTrainer</a>  (const std::string &amp;featureKernelPath, bool useCPU)</dt>
 <dd><p class="startdd">provide API for platform and devices quering </p>
 <p>provide API for devices selection </p>
-<p>avoid files name hard-coding </p>
-<p>better error handling </p>
-<p>Store feature type file file in a platform indipendent path </p>
 <p>better error handling </p>
 <p class="enddd">avoid kernels name hardcoding?  </p>
 </dd>
-<dt><a class="anchor" id="_todo000016"></a>Member <a class="el" href="class_c_l_tree_trainer.html#a063cb147c50682971d1f1d1ef09c1589">CLTreeTrainer&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::train</a>  (Tree&lt; FeatType, FeatDim, nClasses &gt; &amp;tree, const <a class="el" href="class_training_set.html">TrainingSet&lt; ImgType, nChannels &gt;</a> &amp;trainingSet, const TreeTrainerParameters&lt; FeatType, FeatDim &gt; &amp;params, unsigned int startDepth, unsigned int endDepth)</dt>
+<dt><a class="anchor" id="_todo000012"></a>Member <a class="el" href="class_c_l_tree_trainer.html#a063cb147c50682971d1f1d1ef09c1589">CLTreeTrainer&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::train</a>  (Tree&lt; FeatType, FeatDim, nClasses &gt; &amp;tree, const <a class="el" href="class_training_set.html">TrainingSet&lt; ImgType, nChannels &gt;</a> &amp;trainingSet, const TreeTrainerParameters&lt; FeatType, FeatDim &gt; &amp;params, unsigned int startDepth, unsigned int endDepth)</dt>
 <dd>support a starting depth different from 1  </dd>
-<dt><a class="anchor" id="_todo000017"></a>Member <a class="el" href="class_c_l_tree_trainer.html#a2e285aea6145f5c3d2fbfb47583da08c">CLTreeTrainer&lt; ImgType, nChannels, FeatType, FeatDim, nClasses &gt;::~CLTreeTrainer</a>  ()</dt>
-<dd>full OpenCL cleanup  </dd>
-<dt><a class="anchor" id="_todo000035"></a>Class <a class="el" href="class_c_v_image_r_o_i_loader.html">CVImageROILoader&lt; type, nChannels &gt;</a>  </dt>
+<dt><a class="anchor" id="_todo000031"></a>Class <a class="el" href="class_c_v_image_r_o_i_loader.html">CVImageROILoader&lt; type, nChannels &gt;</a>  </dt>
 <dd>template for generalized cropping  </dd>
-<dt><a class="anchor" id="_todo000037"></a>Member <a class="el" href="class_c_v_r_g_b_labels_r_o_i_loader.html#a5ae64f8a8526532bacb85c71fe87dbc7">CVRGBLabelsROILoader::load</a>  (const std::string &amp;imagePath, unsigned char *data, unsigned int *width, unsigned int *height)</dt>
-<dd>rewrite to take advantage of _extractROI helper function  </dd>
-<dt><a class="anchor" id="_todo000038"></a>Member <a class="el" href="class_c_v_r_g_b_labels_r_o_i_loader.html#a0144d3ab63c4a461d9f78f2390012f81">CVRGBLabelsROILoader::load</a>  (const std::string &amp;imagePath)</dt>
+<dt><a class="anchor" id="_todo000033"></a>Member <a class="el" href="class_c_v_r_g_b_labels_r_o_i_loader.html#a0144d3ab63c4a461d9f78f2390012f81">CVRGBLabelsROILoader::load</a>  (const std::string &amp;imagePath)</dt>
 <dd>Optimize to avoid temporary <a class="el" href="class_image.html" title="Base class to store an image. The class acts as a simple container of pixels values. Arbitrary pixels type and number of channels are supported through template parameters. Image pixels must be stored continuously in memory. ">Image</a> object creation  </dd>
-<dt><a class="anchor" id="_todo000041"></a>Member <a class="el" href="class_training_set.html#af0ac3a2ba793c699f2a2fc092596472d">TrainingSet&lt; type, nChannels &gt;::TrainingSet</a>  (const std::string &amp;tsPath, const std::string &amp;dataSuffix, const std::string &amp;labelsSuffix, unsigned int nClasses, ImageLoader&lt; type, nChannels &gt; &amp;dataLoader, <a class="el" href="class_image_loader.html">ImageLoader&lt; unsigned char, 1 &gt;</a> &amp;labelsLoader, const ImageSampler&lt; type, nChannels &gt; &amp;sampler)</dt>
-<dd><p class="startdd">how to deal with (rare) cases when image resolution or number of channels are greater than the ones supported? </p>
-<p class="enddd">log skipped samples?  </p>
-</dd>
-<dt><a class="anchor" id="_todo000039"></a>Member <a class="el" href="class_training_set_image.html#ab0a39eebb727a459b12ac17ff3f3b77b">TrainingSetImage&lt; type, nChannels &gt;::TrainingSetImage</a>  (const type *data, unsigned int width, unsigned int height, const unsigned char *labels, unsigned int nClasses, const unsigned int *samples, unsigned int nSamples)</dt>
+<dt><a class="anchor" id="_todo000036"></a>Member <a class="el" href="class_training_set.html#af0ac3a2ba793c699f2a2fc092596472d">TrainingSet&lt; type, nChannels &gt;::TrainingSet</a>  (const std::string &amp;tsPath, const std::string &amp;dataSuffix, const std::string &amp;labelsSuffix, unsigned int nClasses, ImageLoader&lt; type, nChannels &gt; &amp;dataLoader, <a class="el" href="class_image_loader.html">ImageLoader&lt; unsigned char, 1 &gt;</a> &amp;labelsLoader, const ImageSampler&lt; type, nChannels &gt; &amp;sampler)</dt>
+<dd>how to deal with (rare) cases when image resolution or number of channels are greater than the ones supported?  </dd>
+<dt><a class="anchor" id="_todo000034"></a>Member <a class="el" href="class_training_set_image.html#ab0a39eebb727a459b12ac17ff3f3b77b">TrainingSetImage&lt; type, nChannels &gt;::TrainingSetImage</a>  (const type *data, unsigned int width, unsigned int height, const unsigned char *labels, unsigned int nClasses, const unsigned int *samples, unsigned int nSamples)</dt>
 <dd><p class="startdd">how to handle unlabeled pixels? (e.g. for transductive learning) </p>
 <p class="enddd">compute real-priors as weel, i.e. priors on the whole pixels set  </p>
 </dd>
-<dt><a class="anchor" id="_todo000043"></a>Member <a class="el" href="class_tree.html#a041e9cab4408fcee9d1b6730c02ac6c3">Tree&lt; FeatType, FeatDim, nClasses &gt;::save</a>  (const std::string &amp;treePath, int idx=-1) const </dt>
+<dt><a class="anchor" id="_todo000037"></a>Member <a class="el" href="class_tree.html#a041e9cab4408fcee9d1b6730c02ac6c3">Tree&lt; FeatType, FeatDim, nClasses &gt;::save</a>  (const std::string &amp;treePath, int idx=-1) const </dt>
 <dd><p class="startdd">new tree's xml format (e.g. add training information) </p>
 <p class="enddd">tree zipping??? (i.e. shift nodes when inner nodes with -2 leftChild member are found) </p>
 </dd>
@@ -124,7 +111,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 11 2015 12:25:29 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Aug 31 2016 14:25:15 for Padenti by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

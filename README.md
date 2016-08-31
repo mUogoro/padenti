@@ -16,28 +16,31 @@ Features include:
 - support of arbitrary image pixel type and number of channels
 - support of arbitrary per-pixel features through a custom OpenCL C function
   
-"Padenti" is the word in Sardinian language (in its variant of the Mogoro village) for "Forest".
+"Padenti" stands for "Forest" in Sardinian language (in its variant of the Mogoro village).
 
 
 ## Dependencies and installation
 ###Dependencies
-- A GNU Linux system
+- A GNU Linux or Windows system
 - An OpenCL environment from either Nvidia or AMD
 - A CPU with SS2 instructions support
-- OpenCV 
+- OpenCV (components highgui and imgproc)
 - Boost (components random, filesystem, chrono and log)
-- cmake (for compilation and installation)
+- cmake 3.1 (for compilation and installation)
 - Doxygen (for documentation generation)
+- [pthread-win32](https://www.sourceware.org/pthreads-win32/) (Windows only)
+- [cygwin](https://www.cygwin.com/) (xxd Windows port needed for compilation).
 
 ###Compilation and installation
+On Linux
 ```
 git clone https://github.com/mUogoro/padenti.git padenti
 cd padenti
 mkdir build && cd build
-# The flag -DNVIDIA=True is mandatory for Nvidia OpenCL implementation support
-cmake -DNVIDIA=True ..
+cmake ..
 make && make doc && make install
 ```
+On Windows, open the generated solution file in Visual Studio.
 
 ##Citing
 If you use Padenti in a scientific publication, please cite the following article

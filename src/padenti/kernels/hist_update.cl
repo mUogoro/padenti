@@ -32,6 +32,7 @@
 
 #include <feature.cl>
 
+
 uint4 md5Rand(uint4 seed);
 __kernel void computePerImageHistogram(__read_only image_t image,
 				       uint nChannels, uint width, uint height,
@@ -55,6 +56,8 @@ __kernel void computePerImageHistogram(__read_only image_t image,
   int2 coords;
   int nodeID;
 
+  __local unsigned char wgLHistAccum[256];
+
   coords.x = samples[get_global_id(0)];
   coords = (int2)(coords.x%width, coords.x/width);
   nodeID = read_imagei(nodesID, sampler, coords).x;
@@ -71,9 +74,6 @@ __kernel void computePerImageHistogram(__read_only image_t image,
   seed.w = baseSeed;
   */
 
-  /** 
-   * \todo better int32-to-float32 conversion
-  */
   for (int i=0; i<featDim; i+=4)
   {
     seed = md5Rand(seed);
@@ -83,14 +83,13 @@ __kernel void computePerImageHistogram(__read_only image_t image,
     int gtThrID = min(4, ((int)featDim)-i);
     if (!get_local_id(0)&&get_local_id(1)<gtThrID*2)
     {
-      tmp[get_local_id(1)] = \
+      tmp[get_local_id(1)] =						\
 	(get_local_id(1)<gtThrID) ? featLowBounds[i+get_local_id(1)] : featUpBounds[i+get_local_id(1)-gtThrID];
     }
     barrier(CLK_LOCAL_MEM_FENCE);
     
-
     /** \todo  Find another way the uint32-to-float conversion since uncorrect results get
-     are returned by old fglrx driver versions (e.g. default Ubuntu 14.04 version) */
+	are returned by old fglrx driver versions (e.g. default Ubuntu 14.04 version) */
     feat = tmp[0] + 
       (feat_t)(((float)(seed.x))/(0xFFFFFFFF)*(tmp[gtThrID]-tmp[0]));
     ACCESS_FEATURE(featuresBuff, i, featDim) = feat;
@@ -117,8 +116,6 @@ __kernel void computePerImageHistogram(__read_only image_t image,
   // trained leaves
   if (nodeID>=startNode && nodeID<=endNode)
   {
-
-    //offset = (get_global_id(0)*get_global_size(1)+get_global_id(1))*featDim;
     feat = computeFeature(image, nChannels, width, height, coords,
 			  treeLeftChildren, treePosteriors, nodesID,
 			  featuresBuff, featDim);
@@ -128,61 +125,103 @@ __kernel void computePerImageHistogram(__read_only image_t image,
     seed.y = read_imagei(nodesID, sampler, coords).x;
     seed.z = get_global_id(1);
     seed.w = 1;
-    //offset = get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
-    perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
+    
+    //perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)+get_global_id(1);
+    perImageHistogram += get_global_id(0)*nThresholds*get_global_size(1)/8 + 
+                         get_global_id(1)/8;
 
-    /*
-    for (uint t=0; t<nThresholds; t++)
-    { 
-      thr = thrLowBound + (feat_t)((float)t*(thrUpBound-thrLowBound)/nThresholds);
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-    }
-    */
-    
-    
+    __local unsigned char *wgLHistAccumPtr = 
+      &wgLHistAccum[get_local_id(0)*get_local_size(1)+get_local_id(1)];
+
     for (uint t=0; t<nThresholds;)
     { 
       seed = md5Rand(seed);
 
       thr = thrLowBound + 
 	(feat_t)(((float)seed.x)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
+      *wgLHistAccumPtr = ((uchar)(feat<=thr ? 1 : 0))<<(get_global_id(1)%8);
+      barrier(CLK_LOCAL_MEM_FENCE);
+      if (!((get_local_id(1)/4)%2))
+      {
+	*wgLHistAccumPtr |= *(wgLHistAccumPtr+4);
+	if (!((get_local_id(1)/2)%2))
+	{
+	  *wgLHistAccumPtr |= *(wgLHistAccumPtr+2);
+	  if (!(get_local_id(1)%2))
+	  {
+	    *wgLHistAccumPtr |= *(wgLHistAccumPtr+1);
+	    *perImageHistogram = *wgLHistAccumPtr;
+	    perImageHistogram += get_global_size(1)/8;
+	  }
+	}
+      }
+      barrier(CLK_LOCAL_MEM_FENCE);
+      ++t; if ((t)>=nThresholds) break;
+
 
       thr = thrLowBound + 
 	(feat_t)(((float)seed.y)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-    
+      *wgLHistAccumPtr = ((uchar)(feat<=thr ? 1 : 0))<<(get_global_id(1)%8);
+      barrier(CLK_LOCAL_MEM_FENCE);
+      if (!((get_local_id(1)/4)%2))
+      {
+	*wgLHistAccumPtr |= *(wgLHistAccumPtr+4);
+	if (!((get_local_id(1)/2)%2))
+	{
+	  *wgLHistAccumPtr |= *(wgLHistAccumPtr+2);
+	  if (!(get_local_id(1)%2))
+	  {
+	    *wgLHistAccumPtr |= *(wgLHistAccumPtr+1);
+	    *perImageHistogram = *wgLHistAccumPtr;
+	    perImageHistogram += get_global_size(1)/8;
+	  }
+	}
+      }
+      barrier(CLK_LOCAL_MEM_FENCE);
+      ++t; if ((t)>=nThresholds) break;
+
       thr = thrLowBound + 
 	(feat_t)(((float)seed.z)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
-      ++t;
-      if ((t)>=nThresholds) break;
-      
+      *wgLHistAccumPtr = ((uchar)(feat<=thr ? 1 : 0))<<(get_global_id(1)%8);
+      barrier(CLK_LOCAL_MEM_FENCE);
+      if (!((get_local_id(1)/4)%2))
+      {
+	*wgLHistAccumPtr |= *(wgLHistAccumPtr+4);
+	if (!((get_local_id(1)/2)%2))
+	{
+	  *wgLHistAccumPtr |= *(wgLHistAccumPtr+2);
+	  if (!(get_local_id(1)%2))
+	  {
+	    *wgLHistAccumPtr |= *(wgLHistAccumPtr+1);
+	    *perImageHistogram = *wgLHistAccumPtr;
+	    perImageHistogram += get_global_size(1)/8;
+	  }
+	}
+      }
+      barrier(CLK_LOCAL_MEM_FENCE);
+      ++t; if ((t)>=nThresholds) break;
+
       thr = thrLowBound + 
 	(feat_t)(((float)seed.w)/(0xFFFFFFFF)*(thrUpBound-thrLowBound));
-      //perImageHistogram[offset] = (uchar)((feat<=thr) ? 1 : 0);
-      //offset += get_global_size(1);
-      *perImageHistogram = (uchar)((feat<=thr) ? 1 : 0);
-      perImageHistogram += get_global_size(1);
+      *wgLHistAccumPtr = ((uchar)(feat<=thr ? 1 : 0))<<(get_global_id(1)%8);
+      barrier(CLK_LOCAL_MEM_FENCE);
+      if (!((get_local_id(1)/4)%2))
+      {
+	*wgLHistAccumPtr |= *(wgLHistAccumPtr+4);
+	if (!((get_local_id(1)/2)%2))
+	{
+	  *wgLHistAccumPtr |= *(wgLHistAccumPtr+2);
+	  if (!(get_local_id(1)%2))
+	  {
+	    *wgLHistAccumPtr |= *(wgLHistAccumPtr+1);
+	    *perImageHistogram = *wgLHistAccumPtr;
+	    perImageHistogram += get_global_size(1)/8;
+	  }
+	}
+      }
+      barrier(CLK_LOCAL_MEM_FENCE);
       ++t;
     }
-    
   }
 }
 

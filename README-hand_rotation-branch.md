@@ -1,0 +1,4 @@
+# hand_rotation branch
+The current branch modifies the Padenti library in order to provide the features needed to perform the regression of 3D rotations of generic objects (e.g. acquired from a depth camera). The details about the regression procedure are provided in a (still to be published) technical report.
+
+This branch adds different classes (e.g. RTree, CLRegressor) to perform the regression. It breaks the "generality with respect to the problem" assumption of the master branch, that is, it can not be applied to perform general regression of per-image or per-pixel values. Some (undocumented) from the offsets_lut branch have been integrated as well.

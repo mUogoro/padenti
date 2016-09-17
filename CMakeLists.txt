@@ -31,6 +31,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/padenti/padenti.hpp.in"
 add_definitions(-DBOOST_ALL_DYN_LINK)
 find_package(OpenCL REQUIRED)
 find_package(PThread REQUIRED)
+find_package(Eigen REQUIRED)
 find_package(OpenCVHighGuiImgProc REQUIRED)
 find_package(Boost COMPONENTS random filesystem system timer chrono log REQUIRED)
 
@@ -79,7 +80,7 @@ endif (WIN32)
 
 # Installation directives
 get_filename_component(Padenti_INSTALL_DIR ${CMAKE_INSTALL_PREFIX} ABSOLUTE)
-set(Padenti_EXT_INCLUDE_DIRS ${PTHREAD_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${OpenCL_INCLUDE_DIR})
+set(Padenti_EXT_INCLUDE_DIRS ${PTHREAD_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${OpenCL_INCLUDE_DIR})
 set(Padenti_EXT_LIBRARY_DIRS ${PTHREAD_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS} ${OPENCV_LIBRARY_DIRS})
 set(Padenti_EXT_LIBRARIES ${PTHREAD_LIBRARIES} ${OPENCV_LIBRARIES} ${Boost_RANDOM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_CHRONO_LIBRARY} ${Boost_LOG_LIBRARY} ${OpenCL_LIBRARY})
 configure_file("${PROJECT_SOURCE_DIR}/PadentiConfig.cmake.in"

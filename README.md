@@ -8,7 +8,7 @@ accelerated on GPUs using the OpenCL framework.
 The library has been developed by the
 [Engineering for Health and Wellbeing group](http://www.ehw.ieiit.cnr.it/?q=computervision) at the
 [Institute of Electronics, Computer and Telecommunication Engineering](http://www.ieiit.cnr.it)
-of the National Research Council of Italy (CNR).
+of the National Research Council of Italy (CNR) and is distributed under the [LGPLv3 license](https://www.gnu.org/licenses/lgpl-3.0.en.html).
 
 Features include:
 - fast training of large datasets using OpenCL
@@ -20,7 +20,7 @@ Features include:
 
 
 ## Dependencies and installation
-###Dependencies
+### Dependencies
 - A GNU Linux or Windows system
 - An OpenCL environment from either Nvidia or AMD
 - A CPU with SS2 instructions support
@@ -31,7 +31,7 @@ Features include:
 - [pthread-win32](https://www.sourceware.org/pthreads-win32/) (Windows only)
 - [cygwin](https://www.cygwin.com/) (xxd Windows port needed for compilation).
 
-###Compilation and installation
+### Compilation and installation
 On Linux
 ```
 git clone https://github.com/mUogoro/padenti.git padenti
@@ -42,7 +42,7 @@ make && make doc && make install
 ```
 On Windows, open the generated solution file in Visual Studio.
 
-##Citing
+## Citing
 If you use Padenti in a scientific publication, please cite the following article
 
 Daniele Pianu, Roberto Nerino, Claudia Ferraris, and Antonio Chimienti 
